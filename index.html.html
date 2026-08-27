@@ -1,0 +1,2708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FarmSync — Farmer Procurement Slot &amp; Smart Queue Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#1F6B3F;
+  --primary-dark:#123F26;
+  --primary-light:#E7F2EA;
+  --accent:#C8912A;
+  --accent-dark:#9C6F1A;
+  --bg:#F4F5F0;
+  --surface:#FFFFFF;
+  --surface-2:#FAFBF8;
+  --text:#1A241D;
+  --text-muted:#5C6B5F;
+  --text-faint:#8B978E;
+  --border:#E0E4DA;
+  --success:#2E7D4F;
+  --success-bg:#E7F5EC;
+  --warning:#B4791A;
+  --warning-bg:#FBF0DD;
+  --danger:#C0392B;
+  --danger-bg:#FBE9E7;
+  --info:#2758C9;
+  --info-bg:#E8EEFD;
+  --font-display:'Manrope','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --font-body:'Inter','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --font-mono:'IBM Plex Mono','SF Mono',Menlo,Consolas,monospace;
+  --radius-sm:6px;
+  --radius-md:10px;
+  --radius-lg:16px;
+  --shadow-sm:0 1px 2px rgba(18,63,38,0.06);
+  --shadow-md:0 4px 16px rgba(18,63,38,0.09);
+  --shadow-lg:0 12px 32px rgba(18,63,38,0.14);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size:64px 64px;
+  background-attachment:fixed;
+  background-color:var(--bg);
+}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:800;margin:0;color:var(--text);letter-spacing:-0.01em;}
+p{margin:0;}
+button{font-family:var(--font-body);cursor:pointer;}
+input,select,textarea{font-family:var(--font-body);}
+a{color:inherit;}
+::selection{background:var(--accent);color:#fff;}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+
+/* ---------- App shell ---------- */
+#app{min-height:100vh;display:flex;flex-direction:column;}
+
+.role-switch-bar{
+  background:var(--primary-dark);
+  color:#fff;
+  padding:8px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size:12.5px;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.role-switch-bar .rs-label{opacity:0.75;letter-spacing:0.02em;}
+.role-switch-bar .rs-buttons{display:flex;gap:6px;}
+.role-switch-bar button{
+  background:transparent;border:1px solid rgba(255,255,255,0.28);color:#fff;
+  padding:5px 12px;border-radius:20px;font-size:12.5px;font-weight:600;
+  transition:background .15s, border-color .15s;
+}
+.role-switch-bar button.active{background:var(--accent);border-color:var(--accent);color:#2A1B04;}
+.role-switch-bar button:not(.active):hover{background:rgba(255,255,255,0.12);}
+.role-switch-bar .rs-note{opacity:0.65;font-size:11.5px;}
+
+.main-wrap{flex:1;display:flex;justify-content:center;padding:28px 16px 60px;}
+
+/* ---------- Phone frame (farmer) ---------- */
+.phone-frame{
+  width:412px;max-width:100%;
+  background:var(--surface);
+  border-radius:34px;
+  border:10px solid #14201A;
+  box-shadow:var(--shadow-lg);
+  overflow:hidden;
+  min-height:840px;
+  display:flex;flex-direction:column;
+  position:relative;
+}
+.phone-notch{
+  height:26px;background:#14201A;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.phone-notch::after{content:'';width:70px;height:6px;background:#2A382F;border-radius:4px;}
+.phone-screen{flex:1;display:flex;flex-direction:column;overflow-y:auto;background:var(--surface-2);}
+
+/* ---------- Farmer top bar ---------- */
+.f-topbar{
+  background:var(--primary);color:#fff;padding:16px 18px 14px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.f-topbar .f-brand{display:flex;align-items:center;gap:8px;}
+.f-topbar .f-brand-mark{
+  width:30px;height:30px;border-radius:8px;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;color:#2A1B04;font-size:15px;
+}
+.f-topbar .f-brand-name{font-family:var(--font-display);font-weight:800;font-size:16px;}
+.f-topbar .f-icon-btn{
+  background:rgba(255,255,255,0.14);border:none;color:#fff;width:34px;height:34px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:15px;position:relative;
+}
+.f-topbar .f-icon-btn .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--accent);border:1.5px solid var(--primary);}
+.f-back-row{display:flex;align-items:center;gap:10px;padding:14px 18px 4px;flex-shrink:0;}
+.f-back-btn{background:none;border:none;color:var(--primary);font-weight:700;font-size:14px;display:flex;align-items:center;gap:4px;padding:4px;}
+.f-back-row h2{font-size:17px;}
+
+.f-body{padding:16px 18px 90px;flex:1;}
+.f-body.no-pad-bottom{padding-bottom:20px;}
+
+/* Bottom nav */
+.f-bottomnav{
+  display:flex;background:var(--surface);border-top:1px solid var(--border);
+  padding:8px 6px calc(env(safe-area-inset-bottom,0px) + 8px);
+  position:sticky;bottom:0;flex-shrink:0;
+}
+.f-bottomnav button{
+  flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:var(--text-faint);font-size:10.5px;font-weight:600;padding:4px 0;border-radius:10px;
+}
+.f-bottomnav button .nav-ic{font-size:18px;}
+.f-bottomnav button.active{color:var(--primary);}
+.f-bottomnav button.active .nav-ic{transform:translateY(-1px);}
+
+/* ---------- Cards & generic components ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;}
+.card + .card{margin-top:12px;}
+.section-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;}
+.hairline{height:1px;background:var(--border);border:none;margin:14px 0;}
+
+.btn{
+  border:none;border-radius:10px;padding:12px 18px;font-weight:700;font-size:14px;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:filter .12s, transform .05s;
+}
+.btn:active{transform:scale(0.98);}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{filter:brightness(1.08);}
+.btn-accent{background:var(--accent);color:#2A1B04;}
+.btn-accent:hover{filter:brightness(1.06);}
+.btn-outline{background:transparent;color:var(--primary);border:1.5px solid var(--primary);}
+.btn-outline:hover{background:var(--primary-light);}
+.btn-danger-outline{background:transparent;color:var(--danger);border:1.5px solid var(--danger);}
+.btn-ghost{background:transparent;color:var(--text-muted);}
+.btn-block{width:100%;}
+.btn-sm{padding:8px 12px;font-size:12.5px;border-radius:8px;}
+.btn:disabled{opacity:0.45;cursor:not-allowed;}
+
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;letter-spacing:0.02em;}
+.badge-success{background:var(--success-bg);color:var(--success);}
+.badge-warning{background:var(--warning-bg);color:var(--warning);}
+.badge-danger{background:var(--danger-bg);color:var(--danger);}
+.badge-info{background:var(--info-bg);color:var(--info);}
+.badge-neutral{background:var(--primary-light);color:var(--primary-dark);}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;}
+.field .hint{font-size:11.5px;color:var(--text-faint);margin-top:5px;}
+.input, .select{
+  width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;
+  background:var(--surface);color:var(--text);
+}
+.input:focus, .select:focus{border-color:var(--primary);}
+.otp-row{display:flex;gap:8px;}
+.otp-row input{
+  width:44px;height:52px;text-align:center;font-size:20px;font-weight:700;border:1.5px solid var(--border);
+  border-radius:10px;font-family:var(--font-mono);
+}
+.otp-row input:focus{border-color:var(--primary);}
+
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{
+  border:1.5px solid var(--border);background:var(--surface);border-radius:10px;padding:10px 14px;
+  font-size:13.5px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;
+}
+.chip.selected{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark);}
+.chip .chip-ic{font-size:16px;}
+
+.stepper{display:flex;align-items:center;gap:4px;margin-bottom:18px;}
+.stepper .step{flex:1;height:4px;border-radius:3px;background:var(--border);}
+.stepper .step.done{background:var(--primary);}
+
+.token-badge{
+  background:linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color:#fff;border-radius:var(--radius-lg);padding:20px;position:relative;overflow:hidden;
+}
+.token-badge::before{
+  content:'';position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;
+  background:rgba(255,255,255,0.07);
+}
+.token-badge::after{
+  content:'';position:absolute;left:-20px;bottom:-40px;width:100px;height:100px;border-radius:50%;
+  background:rgba(255,255,255,0.05);
+}
+.token-badge .tb-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.75;font-weight:700;}
+.token-badge .tb-token{font-family:var(--font-mono);font-size:34px;font-weight:600;letter-spacing:0.03em;margin:4px 0 10px;position:relative;}
+.token-badge .tb-meta{display:flex;justify-content:space-between;font-size:12.5px;opacity:0.9;position:relative;}
+.perforation{
+  height:0;border-top:2px dashed rgba(255,255,255,0.35);margin:14px 0 12px;position:relative;
+}
+
+.qr-box{
+  width:168px;height:168px;margin:0 auto;background:#fff;border-radius:12px;padding:10px;
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+}
+
+.list-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;}
+.list-row + .list-row{border-top:1px solid var(--border);}
+.list-row .lr-label{color:var(--text-muted);font-size:13px;}
+.list-row .lr-value{font-weight:700;font-size:13.5px;text-align:right;}
+
+.empty-state{text-align:center;padding:44px 20px;color:var(--text-muted);}
+.empty-state .es-ic{font-size:34px;margin-bottom:10px;}
+.empty-state h4{font-size:15px;margin-bottom:6px;color:var(--text);}
+.empty-state p{font-size:13px;margin-bottom:16px;}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--primary-dark);color:#fff;padding:12px 20px;border-radius:12px;font-size:13.5px;font-weight:600;
+  box-shadow:var(--shadow-lg);z-index:999;display:flex;align-items:center;gap:8px;max-width:90vw;
+  animation:toastIn .18s ease;
+}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px);}to{opacity:1;transform:translate(-50%,0);}}
+
+.progress-track{height:8px;border-radius:6px;background:var(--border);overflow:hidden;}
+.progress-fill{height:100%;background:var(--primary);border-radius:6px;transition:width .3s ease;}
+
+.timeline{display:flex;flex-direction:column;}
+.tl-item{display:flex;gap:12px;}
+.tl-marker-col{display:flex;flex-direction:column;align-items:center;}
+.tl-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.tl-dot.done{background:var(--primary);color:#fff;}
+.tl-dot.active{background:var(--accent);color:#2A1B04;box-shadow:0 0 0 4px var(--warning-bg);}
+.tl-dot.todo{background:var(--border);color:var(--text-faint);}
+.tl-line{width:2px;flex:1;background:var(--border);min-height:22px;}
+.tl-line.done{background:var(--primary);}
+.tl-content{padding-bottom:22px;}
+.tl-content h5{font-size:13.5px;margin-bottom:2px;}
+.tl-content p{font-size:12px;color:var(--text-muted);}
+
+.centre-load-badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;}
+.load-low{background:var(--success-bg);color:var(--success);}
+.load-medium{background:var(--warning-bg);color:var(--warning);}
+.load-high{background:var(--danger-bg);color:var(--danger);}
+
+.lang-pill-row{display:flex;gap:6px;}
+.lang-pill{border:1.5px solid var(--border);background:var(--surface);border-radius:8px;padding:8px 4px;text-align:center;font-size:12px;font-weight:700;flex:1;}
+.lang-pill.selected{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark);}
+
+/* ---------- Desktop shell (officer / admin) ---------- */
+.desktop-shell{
+  width:100%;max-width:1180px;background:var(--surface);border-radius:var(--radius-lg);
+  border:1px solid var(--border);box-shadow:var(--shadow-lg);overflow:hidden;min-height:760px;
+  display:flex;
+}
+.desktop-shell.centered{align-items:center;justify-content:center;}
+.d-sidebar{
+  width:230px;background:var(--primary-dark);color:#fff;display:flex;flex-direction:column;flex-shrink:0;
+}
+.d-sidebar .ds-brand{padding:22px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.d-sidebar .ds-brand-mark{width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;color:#2A1B04;}
+.d-sidebar .ds-brand-name{font-family:var(--font-display);font-weight:800;font-size:16px;}
+.d-sidebar .ds-brand-sub{font-size:10.5px;opacity:0.6;letter-spacing:0.04em;}
+.d-sidebar .ds-nav{padding:14px 12px;flex:1;}
+.d-sidebar .ds-nav button{
+  width:100%;text-align:left;background:none;border:none;color:rgba(255,255,255,0.72);
+  padding:11px 14px;border-radius:9px;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:10px;margin-bottom:2px;
+}
+.d-sidebar .ds-nav button.active{background:rgba(255,255,255,0.13);color:#fff;}
+.d-sidebar .ds-nav button:hover:not(.active){background:rgba(255,255,255,0.06);}
+.d-sidebar .ds-nav .nav-ic{font-size:16px;width:18px;text-align:center;}
+.d-sidebar .ds-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,0.1);font-size:12px;}
+.d-sidebar .ds-footer .df-name{font-weight:700;}
+.d-sidebar .ds-footer .df-role{opacity:0.6;font-size:11px;}
+.d-sidebar .ds-footer button{margin-top:8px;width:100%;background:rgba(255,255,255,0.1);border:none;color:#fff;padding:7px;border-radius:7px;font-size:11.5px;font-weight:600;}
+
+.d-main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.d-topbar{
+  padding:18px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;
+}
+.d-topbar h2{font-size:19px;}
+.d-topbar .d-sub{font-size:12.5px;color:var(--text-muted);margin-top:2px;}
+.d-content{padding:24px 28px 40px;overflow-y:auto;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;}
+.stat-card .stat-label{font-size:11.5px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;}
+.stat-card .stat-value{font-family:var(--font-display);font-size:26px;font-weight:800;margin-top:6px;}
+.stat-card .stat-sub{font-size:11.5px;color:var(--text-faint);margin-top:4px;}
+
+.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+.data-table th{
+  text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);
+  padding:9px 12px;border-bottom:2px solid var(--border);font-weight:700;background:var(--surface-2);
+}
+.data-table td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.current-row{background:var(--primary-light);}
+.table-actions{display:flex;gap:6px;flex-wrap:wrap;}
+
+.two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:start;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+
+.bar-chart{display:flex;flex-direction:column;gap:10px;}
+.bar-row{display:flex;align-items:center;gap:10px;}
+.bar-row .bar-label{width:110px;font-size:12px;color:var(--text-muted);flex-shrink:0;}
+.bar-row .bar-track{flex:1;height:16px;background:var(--surface-2);border-radius:5px;overflow:hidden;border:1px solid var(--border);}
+.bar-row .bar-fill{height:100%;background:var(--primary);border-radius:5px 0 0 5px;}
+.bar-row .bar-value{width:44px;text-align:right;font-size:12px;font-weight:700;flex-shrink:0;}
+
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:5px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted);}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(18,63,38,0.45);display:flex;align-items:center;justify-content:center;z-index:900;padding:20px;}
+.modal-box{background:var(--surface);border-radius:var(--radius-lg);padding:24px;max-width:460px;width:100%;box-shadow:var(--shadow-lg);max-height:86vh;overflow-y:auto;}
+.modal-box h3{font-size:17px;margin-bottom:14px;}
+.modal-actions{display:flex;gap:10px;margin-top:18px;justify-content:flex-end;}
+
+@media (max-width:980px){
+  .desktop-shell{flex-direction:column;min-height:auto;}
+  .d-sidebar{width:100%;flex-direction:row;align-items:center;overflow-x:auto;}
+  .d-sidebar .ds-nav{display:flex;padding:8px;flex:none;}
+  .d-sidebar .ds-nav button{white-space:nowrap;margin-bottom:0;margin-right:2px;}
+  .d-sidebar .ds-footer{display:none;}
+  .two-col{grid-template-columns:1fr;}
+  .grid-3{grid-template-columns:1fr;}
+}
+/* ---------- Connectivity, simulation & demo guide ---------- */
+.rs-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.conn-pill{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:20px;
+  font-size:11.5px;font-weight:700;letter-spacing:0.02em;border:1px solid transparent;cursor:pointer;
+  background:rgba(255,255,255,0.10);color:#fff;border-color:rgba(255,255,255,0.28);
+}
+.conn-pill .conn-led{width:7px;height:7px;border-radius:50%;background:#5FD08A;box-shadow:0 0 0 3px rgba(95,208,138,0.22);}
+.conn-pill.is-offline{background:rgba(192,57,43,0.30);border-color:rgba(255,255,255,0.42);}
+.conn-pill.is-offline .conn-led{background:#FF8A76;box-shadow:0 0 0 3px rgba(255,138,118,0.22);}
+
+.offline-banner{
+  display:flex;align-items:center;gap:9px;background:var(--warning-bg);border-bottom:1px solid #E9D7AF;
+  padding:8px 14px;font-size:11.5px;color:#6E4A05;line-height:1.35;
+}
+.offline-banner b{font-weight:700;}
+
+.sim-pill{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:20px;font-size:11.5px;
+  font-weight:700;border:1px solid rgba(255,255,255,0.28);background:transparent;color:#fff;cursor:pointer;
+}
+.sim-pill.is-on{background:var(--accent);border-color:var(--accent);color:#2A1B04;}
+.guide-pill{margin-left:2px;}
+.sim-pill .sim-led{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.55;}
+.sim-pill.is-on .sim-led{opacity:1;animation:simpulse 1.1s ease-in-out infinite;}
+@keyframes simpulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.5);opacity:.35;}}
+
+/* Guided jury demo */
+.demo-panel{
+  position:fixed;right:18px;bottom:18px;z-index:61;width:330px;max-width:calc(100vw - 36px);
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);overflow:hidden;
+}
+.demo-head{background:var(--primary-dark);color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;}
+.demo-head h4{color:#fff;font-size:13.5px;}
+.demo-head .dh-sub{font-size:10.5px;opacity:0.72;margin-top:2px;letter-spacing:0.03em;}
+.demo-close{background:transparent;border:none;color:#fff;font-size:17px;opacity:0.75;line-height:1;padding:2px 4px;}
+.demo-close:hover{opacity:1;}
+.demo-body{padding:14px;}
+.demo-count{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);letter-spacing:0.08em;margin-bottom:6px;}
+.demo-body h5{font-family:var(--font-display);font-size:15px;font-weight:800;margin:0 0 6px;letter-spacing:-0.01em;}
+.demo-body p{font-size:12.5px;color:var(--text-muted);line-height:1.5;}
+.demo-say{
+  margin-top:10px;padding:9px 11px;background:var(--primary-light);border-left:3px solid var(--primary);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:11.5px;color:var(--primary-dark);line-height:1.45;
+}
+.demo-progress{display:flex;gap:3px;margin:12px 0 10px;}
+.demo-progress span{height:3px;flex:1;border-radius:2px;background:var(--border);}
+.demo-progress span.done{background:var(--primary);}
+.demo-nav{display:flex;gap:8px;}
+.demo-nav .btn{flex:1;}
+@media (max-width:520px){
+  .demo-panel{right:10px;left:10px;width:auto;bottom:10px;}
+}
+
+/* Report table utility */
+.rep-note{font-size:11.5px;color:var(--text-faint);margin-top:10px;line-height:1.45;}
+.kv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 18px;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-row .tr-label{font-size:13px;font-weight:600;}
+.toggle-row .tr-sub{font-size:11.5px;color:var(--text-muted);margin-top:2px;line-height:1.4;}
+.switch{width:42px;height:24px;border-radius:14px;border:none;background:var(--border);position:relative;flex:none;transition:background .18s;}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:var(--shadow-sm);transition:transform .18s;}
+.switch.on{background:var(--primary);}
+.switch.on::after{transform:translateX(18px);}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast-host"></div>
+
+<script>
+/* =========================================================
+   FarmSync Prototype — SIH26032
+   Single-file client-side prototype. All data is simulated.
+   ========================================================= */
+
+/* ---------------- i18n ---------------- */
+const I18N = {
+  en:{
+    appName:'FarmSync', tagline:'Farmer Procurement Slot & Queue Management',
+    home:'Home', book:'Book Slot', findCentre:'Find Centre', queue:'Queue', payments:'Payments', history:'History', profile:'Profile',
+    goodMorning:'Namaste', noAppointment:'No upcoming appointment',
+    noAppointmentSub:'Book a slot at your nearest procurement centre to get a digital token.',
+    bookSlotNow:'Book a Slot'
+  },
+  te:{
+    appName:'FarmSync', tagline:'రైతు సేకరణ స్లాట్ & క్యూ నిర్వహణ',
+    home:'హోమ్', book:'స్లాట్ బుక్ చేయండి', findCentre:'కేంద్రం వెతకండి', queue:'క్యూ', payments:'చెల్లింపులు', history:'చరిత్ర', profile:'ప్రొఫైల్',
+    goodMorning:'నమస్తే', noAppointment:'రాబోయే అపాయింట్‌మెంట్ లేదు',
+    noAppointmentSub:'డిజిటల్ టోకెన్ పొందడానికి మీ సమీప సేకరణ కేంద్రంలో స్లాట్ బుక్ చేయండి.',
+    bookSlotNow:'స్లాట్ బుక్ చేయండి'
+  },
+  hi:{
+    appName:'FarmSync', tagline:'किसान खरीद स्लॉट व कतार प्रबंधन',
+    home:'होम', book:'स्लॉट बुक करें', findCentre:'केंद्र खोजें', queue:'कतार', payments:'भुगतान', history:'इतिहास', profile:'प्रोफ़ाइल',
+    goodMorning:'नमस्ते', noAppointment:'कोई आगामी अपॉइंटमेंट नहीं',
+    noAppointmentSub:'डिजिटल टोकन पाने के लिए अपने नज़दीकी खरीद केंद्र पर स्लॉट बुक करें।',
+    bookSlotNow:'स्लॉट बुक करें'
+  }
+};
+function t(key){ return (I18N[state.lang] && I18N[state.lang][key]) || I18N.en[key] || key; }
+
+/* ---------------- Demo data ---------------- */
+function makeCentres(){
+  return [
+    {id:'C-A', name:'Procurement Centre A — Karimnagar Mandi', distanceKm:3.2, address:'NH-563, Karimnagar, Telangana',
+     hours:'6:00 AM – 6:00 PM', counters:4, activeCounters:3, dailyCapacity:180, bookedToday:132,
+     avgProcessingMin:6, crops:['Paddy','Maize','Cotton'], bookingOpen:true, lat:18.4386, lng:79.1288, travelMin:11},
+    {id:'C-B', name:'Procurement Centre B — Sircilla Yard', distanceKm:8.7, address:'Old Bus Stand Road, Sircilla',
+     hours:'6:30 AM – 5:30 PM', counters:3, activeCounters:2, dailyCapacity:120, bookedToday:54,
+     avgProcessingMin:7, crops:['Wheat','Paddy','Other'], bookingOpen:true, lat:18.3925, lng:78.8397, travelMin:19},
+    {id:'C-C', name:'Procurement Centre C — Jagtial Warehouse', distanceKm:14.1, address:'Warehouse Road, Jagtial',
+     hours:'6:00 AM – 6:00 PM', counters:5, activeCounters:5, dailyCapacity:220, bookedToday:206,
+     avgProcessingMin:5, crops:['Paddy','Cotton'], bookingOpen:true, lat:18.7909, lng:78.9099, travelMin:26},
+  ];
+}
+
+function centreLoad(c){
+  const ratio = c.bookedToday / c.dailyCapacity;
+  if(ratio < 0.55) return 'low';
+  if(ratio < 0.85) return 'medium';
+  return 'high';
+}
+
+const CROP_ICONS = {Paddy:'🌾', Wheat:'🌿', Maize:'🌽', Cotton:'☁️', Other:'🌱'};
+
+function seedQueueForCentre(centreId, aheadCount, startToken){
+  const names = ['Lakshmi Devi','Suresh Reddy','Anitha K','Venkatesh Rao','Padma Rani','Sattaiah','Bhagya Lakshmi','Ravi Kumar','Manga Devi','Kishore N','Saroja Bai','Yellaiah','Chandrakala','Narsimha Rao','Sujatha'];
+  const crops = ['Paddy','Paddy','Maize','Cotton','Paddy','Wheat','Paddy','Cotton','Maize','Paddy','Paddy','Cotton','Wheat','Paddy','Maize'];
+  const q = [];
+  for(let i=0;i<aheadCount;i++){
+    q.push({
+      token: 'A' + (startToken - aheadCount + i),
+      farmer: names[i % names.length],
+      farmerId: 'F' + (10100 + i*7),
+      crop: crops[i % crops.length],
+      quantity: (Math.round((Math.random()*15+8)*10)/10),
+      status: i < 3 ? 'Arrived' : 'Booked',
+      centreId
+    });
+  }
+  return q;
+}
+
+function initState(){
+  const centres = makeCentres();
+  return {
+    role:'farmer', // farmer | officer | admin
+    lang:'en',
+    toast:null,
+    online:true,                       // low-connectivity indicator (plan 6)
+    sim:{running:false, tick:0},       // simulated real-time queue updates (plan 3.6/6)
+    demo:{open:false, step:0},         // guided 5-minute jury demo (plan 12)
+
+    farmer:{
+      screen:'login',
+      loggedIn:false,
+      otp:['','','','','',''],
+      profile:{name:'Ramesh Kumar', farmerId:'F10234', village:'Rampur', district:'Karimnagar', mobile:'9876543210', language:'en'},
+      bookingDraft:{crop:null, quantity:'', centreId:null, date:null, slot:null},
+      bookings:[
+        {id:'BK-20890', token:'A088', crop:'Wheat', quantity:14.2, centreId:'C-B', centreName:'Procurement Centre B — Sircilla Yard',
+         date:'12 Jul 2026', slot:'9:00–10:00 AM', status:'Completed', acceptedQty:13.8, rate:1585, inspection:'Accepted', amount:21876, txnId:'TXN-778821', paymentStatus:'Completed'},
+        {id:'BK-19654', token:'A041', crop:'Paddy', quantity:22.0, centreId:'C-A', centreName:'Procurement Centre A — Karimnagar Mandi',
+         date:'02 Jun 2026', slot:'11:00 AM–12:00 PM', status:'Completed', acceptedQty:20.95, rate:2320, inspection:'Accepted', amount:48620, txnId:'TXN-771190', paymentStatus:'Completed'},
+      ],
+      activeBooking:null,
+      notifications:[]
+    },
+
+    officer:{
+      screen:'login',
+      loggedIn:false,
+      centreId:'C-A',
+      name:'K. Prasad',
+    },
+
+    admin:{
+      screen:'dashboard',
+      settings:{ smsAlerts:true, turnAlertLead:3, autoCloseFullCentres:true, allowReschedule:true }
+    },
+
+    // Registered users, used by Admin > User Management (plan 5.x / 11)
+    users:[
+      {id:'F10234', name:'Ramesh Kumar',   role:'Farmer',  village:'Rampur',    district:'Karimnagar', mobile:'9876543210', status:'Active'},
+      {id:'F10241', name:'Lakshmi Devi',   role:'Farmer',  village:'Gollapally',district:'Karimnagar', mobile:'9701122334', status:'Active'},
+      {id:'F10248', name:'Suresh Reddy',   role:'Farmer',  village:'Vemulawada',district:'Sircilla',   mobile:'9848011223', status:'Active'},
+      {id:'F10255', name:'Anitha K',       role:'Farmer',  village:'Konaraopet',district:'Sircilla',   mobile:'9985544332', status:'Active'},
+      {id:'F10262', name:'Venkatesh Rao',  role:'Farmer',  village:'Kodimyal',  district:'Jagtial',    mobile:'9440077665', status:'Blocked'},
+      {id:'O-2001', name:'K. Prasad',      role:'Officer', village:'—',         district:'Karimnagar', mobile:'9000012345', status:'Active'},
+      {id:'O-2002', name:'M. Sailaja',     role:'Officer', village:'—',         district:'Sircilla',   mobile:'9000067890', status:'Active'},
+      {id:'O-2003', name:'D. Narender',    role:'Officer', village:'—',         district:'Jagtial',    mobile:'9000054321', status:'Active'},
+    ],
+
+    centres:centres,
+    queues:{
+      'C-A': seedQueueForCentre('C-A', 14, 146),
+      'C-B': seedQueueForCentre('C-B', 6, 62),
+      'C-C': seedQueueForCentre('C-C', 21, 205),
+    },
+    completedToday:{ 'C-A':118, 'C-B':47, 'C-C':180 },
+    pendingPayments:{ 'C-A':9, 'C-B':4, 'C-C':15 },
+  };
+}
+
+let state = initState();
+
+/* ---------------- Utilities ---------------- */
+function el(html){
+  html = html.trim();
+  let wrapperTag = 'div';
+  if(/^<(thead|tbody|tfoot)[\s>]/i.test(html)) wrapperTag = 'table';
+  else if(/^<tr[\s>]/i.test(html)) wrapperTag = 'tbody';
+  else if(/^<(td|th)[\s>]/i.test(html)) wrapperTag = 'tr';
+  const d = document.createElement(wrapperTag);
+  d.innerHTML = html;
+  return d.firstElementChild;
+}
+function showToast(msg, icon){
+  icon = icon || '✓';
+  const host = document.getElementById('toast-host');
+  host.innerHTML = '';
+  const toastEl = el('<div class="toast"><span>'+icon+'</span><span>'+msg+'</span></div>');
+  host.appendChild(toastEl);
+  setTimeout(()=>{ if(toastEl.parentNode) toastEl.parentNode.removeChild(toastEl); }, 2600);
+}
+function fmtINR(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
+function openModal(contentEl){
+  closeModal();
+  const overlay = el('<div class="modal-overlay" id="activeModalOverlay"></div>');
+  const box = el('<div class="modal-box"></div>');
+  box.appendChild(contentEl);
+  overlay.appendChild(box);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(); });
+  document.body.appendChild(overlay);
+}
+function closeModal(){
+  const existing = document.getElementById('activeModalOverlay');
+  if(existing) existing.remove();
+}
+function showTransactionModal(b){
+  const c = findCentre(b.centreId);
+  const box = el('<div></div>');
+  box.appendChild(el('<h3>Transaction Details</h3>'));
+  const rows = [
+    ['Booking ID', b.id], ['Token', b.token],
+    ['Crop', CROP_ICONS[b.crop]+' '+b.crop], ['Quantity (Expected)', b.quantity+' qtl'],
+    ['Quantity (Accepted)', (b.acceptedQty!=null?b.acceptedQty+' qtl':'—')],
+    ['Centre', c?c.name.split('—')[1].trim():b.centreName], ['Date', b.date], ['Time Slot', b.slot],
+    ['Rate', b.rate?fmtINR(b.rate)+' / qtl':'—'], ['Amount', b.amount?fmtINR(b.amount):'—'],
+    ['Payment Status', b.paymentStatus||'—'], ['Transaction ID', b.txnId||'—'],
+    ['Quality / Inspection', b.inspection||'—']
+  ];
+  const list = el('<div></div>');
+  rows.forEach(([label,val])=>{ list.appendChild(el('<div class="list-row"><span class="lr-label">'+label+'</span><span class="lr-value">'+val+'</span></div>')); });
+  box.appendChild(list);
+  const actions = el('<div class="modal-actions"></div>');
+  const closeBtn = el('<button class="btn btn-outline">Close</button>');
+  closeBtn.onclick = closeModal;
+  actions.appendChild(closeBtn);
+  box.appendChild(actions);
+  openModal(box);
+}
+function findCentre(id){ return state.centres.find(c=>c.id===id); }
+
+/* Next sequential token for a centre: highest issued number + 1. */
+function nextTokenFor(centreId){
+  const q = state.queues[centreId] || [];
+  const highest = q.reduce((m,x)=>Math.max(m, parseInt(String(x.token).replace(/\D/g,''),10)||0), 0);
+  return 'A' + (highest + 1);
+}
+
+/* ---- Connectivity (plan 6: low-connectivity indicator) ---- */
+function setOnline(v){
+  state.online = v;
+  if(!v) showToast('Offline — your token and booking stay available','📴');
+  else showToast('Back online — queue is live again','📶');
+  render();
+}
+
+/* ---- Simulated real-time queue updates (plan 3.6 / 6) ---- */
+let SIM_TIMER = null;
+function toggleSim(){
+  state.sim.running = !state.sim.running;
+  if(state.sim.running){
+    SIM_TIMER = setInterval(simStep, 4000);
+    showToast('Live simulation started — queue moves every 4s','▶️');
+  } else {
+    clearInterval(SIM_TIMER); SIM_TIMER = null;
+    showToast('Live simulation paused','⏸');
+  }
+  render();
+}
+function simStep(){
+  state.sim.tick++;
+  // Advance each centre that still has farmers waiting ahead of the demo farmer.
+  state.centres.forEach(c=>{
+    const q = state.queues[c.id];
+    const next = q.find(x=>x.status==='Booked' || x.status==='Arrived');
+    if(!next) return;
+    const f = state.farmer;
+    // Never auto-complete the demo farmer — the officer does that on stage.
+    if(f.activeBooking && next.token===f.activeBooking.token) return;
+    next.status = 'Completed';
+    state.completedToday[c.id] = (state.completedToday[c.id]||0)+1;
+  });
+  notifyIfTurnNear();
+  render();
+}
+/* Turn-approaching alert (plan 3.6 / 3.10) */
+function notifyIfTurnNear(){
+  const f = state.farmer;
+  if(!f.activeBooking || f.activeBooking.status==='Completed') return;
+  const q = state.queues[f.activeBooking.centreId] || [];
+  const idx = q.findIndex(x=>x.token===f.activeBooking.token);
+  if(idx < 0) return;
+  const ahead = q.slice(0, idx).filter(x=>x.status!=='Completed' && x.status!=='Skipped').length;
+  const lead = state.admin.settings.turnAlertLead;
+  if(ahead <= lead && !f._turnAlerted){
+    f._turnAlerted = true;
+    f.notifications.unshift({id:Date.now(), title:'Your turn is approaching',
+      body:'Only '+ahead+' farmer(s) ahead of you. Please reach the counter with your QR pass.',
+      time:'Just now', read:false, icon:'⏰'});
+    showToast('Your turn is approaching — '+ahead+' ahead','⏰');
+  }
+}
+function qrPatternSVG(seed, size){
+  size = size || 140;
+  // deterministic pseudo-QR pattern purely for visual representation (not a scannable code)
+  let h = 0;
+  for(let i=0;i<seed.length;i++){ h = (h*31 + seed.charCodeAt(i)) >>> 0; }
+  const cells = 11;
+  const cell = size/cells;
+  let rects = '';
+  function rnd(){ h = (h*1103515245 + 12345) >>> 0; return (h % 1000)/1000; }
+  for(let y=0;y<cells;y++){
+    for(let x=0;x<cells;x++){
+      const isFinder = (x<3&&y<3)||(x>cells-4&&y<3)||(x<3&&y>cells-4);
+      if(isFinder) continue;
+      if(rnd() > 0.56){ rects += '<rect x="'+(x*cell)+'" y="'+(y*cell)+'" width="'+cell+'" height="'+cell+'" fill="#123F26"/>'; }
+    }
+  }
+  function finder(fx,fy){
+    return '<rect x="'+(fx*cell)+'" y="'+(fy*cell)+'" width="'+(cell*3)+'" height="'+(cell*3)+'" fill="#123F26"/>'+
+           '<rect x="'+((fx+0.6)*cell)+'" y="'+((fy+0.6)*cell)+'" width="'+(cell*1.8)+'" height="'+(cell*1.8)+'" fill="#fff"/>'+
+           '<rect x="'+((fx+1.05)*cell)+'" y="'+((fy+1.05)*cell)+'" width="'+(cell*0.9)+'" height="'+(cell*0.9)+'" fill="#123F26"/>';
+  }
+  return '<svg viewBox="0 0 '+size+' '+size+'" width="'+size+'" height="'+size+'" xmlns="http://www.w3.org/2000/svg">'+
+    '<rect width="'+size+'" height="'+size+'" fill="#fff"/>'+
+    rects + finder(0,0) + finder(cells-3,0) + finder(0,cells-3) +
+    '</svg>';
+}
+/* Estimated wait = farmers ahead x avg processing time / active counters  (plan 6).
+   Pass beforeToken to count only the farmers genuinely AHEAD of that token;
+   omit it to get the centre's total pending queue length. */
+function computeWait(centreId, beforeToken){
+  const q = state.queues[centreId] || [];
+  const pending = x => x.status!=='Completed' && x.status!=='Skipped';
+  let list = q;
+  if(beforeToken){
+    const idx = q.findIndex(x=>x.token===beforeToken);
+    if(idx >= 0) list = q.slice(0, idx);
+  }
+  const ahead = list.filter(pending).length;
+  const c = findCentre(centreId);
+  const active = Math.max(1, c.activeCounters);
+  const mins = Math.round((ahead * c.avgProcessingMin) / active);
+  return {ahead, mins};
+}
+
+/* ---------------- Root render ---------------- */
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  app.appendChild(renderRoleSwitchBar());
+  if(!state.online) app.appendChild(offlineBanner());
+  const wrap = el('<div class="main-wrap"></div>');
+  if(state.role==='farmer') wrap.appendChild(renderFarmerApp());
+  if(state.role==='officer') wrap.appendChild(renderOfficerApp());
+  if(state.role==='admin') wrap.appendChild(renderAdminApp());
+  app.appendChild(wrap);
+  app.appendChild(renderDemoGuide());
+}
+
+function offlineBanner(){
+  return el('<div class="offline-banner"><span style="font-size:14px;">📴</span>'+
+    '<div><b>Low-connectivity mode.</b> Your booking, token and QR pass are saved on this device and stay visible. '+
+    'Live queue numbers will refresh when the network returns.</div></div>');
+}
+
+function renderRoleSwitchBar(){
+  const bar = el('<div class="role-switch-bar"></div>');
+  bar.appendChild(el('<span class="rs-label">FARMSYNC PROTOTYPE — SIH26032 DEMO</span>'));
+  const btns = el('<div class="rs-buttons"></div>');
+  [['farmer','🧑\u200d🌾 Farmer'],['officer','🧑\u200d💼 Officer'],['admin','🛠 Admin']].forEach(([key,label])=>{
+    const b = el('<button>'+label+'</button>');
+    if(state.role===key) b.classList.add('active');
+    b.onclick = ()=>{ state.role=key; render(); };
+    btns.appendChild(b);
+  });
+  bar.appendChild(btns);
+
+  const right = el('<div class="rs-right"></div>');
+
+  const sim = el('<button class="sim-pill'+(state.sim.running?' is-on':'')+'"><span class="sim-led"></span>'+(state.sim.running?'Live simulation on':'Start live simulation')+'</button>');
+  sim.title = 'Advances every centre queue by one farmer every 4 seconds';
+  sim.onclick = toggleSim;
+  right.appendChild(sim);
+
+  const conn = el('<button class="conn-pill'+(state.online?'':' is-offline')+'"><span class="conn-led"></span>'+(state.online?'Online':'Offline')+'</button>');
+  conn.title = 'Toggle low-connectivity mode';
+  conn.onclick = ()=>setOnline(!state.online);
+  right.appendChild(conn);
+
+  const guide = el('<button class="sim-pill guide-pill'+(state.demo.open?' is-on':'')+'">▶ Guided demo</button>');
+  guide.title = 'Step-by-step script for the 5-minute jury walkthrough';
+  guide.onclick = ()=>{
+    const d = state.demo;
+    d.open = !d.open;
+    if(d.open){ d.step = 0; DEMO_STEPS[0].go(); }
+    render();
+  };
+  right.appendChild(guide);
+
+  right.appendChild(el('<span class="rs-note">Role switch is for demo purposes only</span>'));
+  bar.appendChild(right);
+  return bar;
+}
+
+document.addEventListener('DOMContentLoaded', render);
+
+/* =========================================================
+   FARMER APP
+   ========================================================= */
+function renderFarmerApp(){
+  const frame = el('<div class="phone-frame"></div>');
+  frame.appendChild(el('<div class="phone-notch"></div>'));
+  const screen = el('<div class="phone-screen"></div>');
+  const f = state.farmer;
+
+  if(!f.loggedIn){
+    screen.appendChild(farmerTopbar(false));
+    screen.appendChild(el('<div class="f-body no-pad-bottom"></div>'));
+    screen.querySelector('.f-body').appendChild(screenLogin());
+    frame.appendChild(screen);
+    return frame;
+  }
+
+  const mainTabs = ['dashboard','discovery','queue','payments','profile'];
+  const isMainTab = mainTabs.includes(f.screen);
+
+  if(isMainTab){
+    screen.appendChild(farmerTopbar(true));
+  } else {
+    screen.appendChild(farmerBackRow(screenTitle(f.screen)));
+  }
+
+  const body = el('<div class="f-body"></div>');
+  const map = {
+    dashboard: screenFarmerDashboard, discovery: screenDiscovery, centreDetail: screenCentreDetail, booking: screenBooking,
+    confirmation: screenConfirmation, appointment: screenAppointment, queue: screenQueue, notifications: screenNotifications,
+    checkin: screenCheckin, status: screenStatus, payments: screenPayments, history: screenHistory,
+    profile: screenProfile, help: screenHelp
+  };
+  body.appendChild((map[f.screen]||screenFarmerDashboard)());
+  screen.appendChild(body);
+
+  if(isMainTab){
+    screen.appendChild(farmerBottomNav());
+  }
+
+  frame.appendChild(screen);
+  return frame;
+}
+
+function screenTitle(name){
+  const titles = {
+    booking:'Book a Slot', confirmation:'Booking Confirmed', appointment:'My Appointment', notifications:'Notifications',
+    checkin:'QR Check-in Pass', status:'Procurement Tracking', history:'History',
+    centreDetail:'Centre Details', help:'Help & Support'
+  };
+  return titles[name] || '';
+}
+
+function farmerTopbar(loggedIn){
+  const bar = el('<div class="f-topbar"></div>');
+  const brand = el('<div class="f-brand"><div class="f-brand-mark">FS</div><div class="f-brand-name">FarmSync</div></div>');
+  bar.appendChild(brand);
+  if(loggedIn){
+    const right = el('<div style="display:flex;gap:8px;"></div>');
+    const bell = el('<button class="f-icon-btn" title="Notifications">🔔'+(state.farmer.notifications.some(n=>!n.read)?'<span class="dot"></span>':'')+'</button>');
+    bell.onclick = ()=>{ state.farmer.screen='notifications'; render(); };
+    right.appendChild(bell);
+    bar.appendChild(right);
+  }
+  return bar;
+}
+function farmerBackRow(title){
+  const row = el('<div class="f-back-row"></div>');
+  const back = el('<button class="f-back-btn">← Back</button>');
+  back.onclick = ()=>{ state.farmer.screen = 'dashboard'; render(); };
+  row.appendChild(back);
+  row.appendChild(el('<h2>'+title+'</h2>'));
+  return row;
+}
+function farmerBottomNav(){
+  const nav = el('<div class="f-bottomnav"></div>');
+  const items = [
+    ['dashboard','🏠', t('home')],
+    ['discovery','🏢', t('findCentre')],
+    ['queue','⏱', t('queue')],
+    ['payments','💳', t('payments')],
+    ['profile','👤', t('profile')],
+  ];
+  items.forEach(([key,ic,label])=>{
+    const b = el('<button><span class="nav-ic">'+ic+'</span><span>'+label+'</span></button>');
+    if(state.farmer.screen===key) b.classList.add('active');
+    b.onclick = ()=>{
+      if(key==='queue' && !state.farmer.activeBooking){ showToast('No active booking to track yet','ℹ️'); return; }
+      state.farmer.screen=key; render();
+    };
+    nav.appendChild(b);
+  });
+  return nav;
+}
+
+/* ---- Screen: Login ---- */
+function screenLogin(){
+  const f = state.farmer;
+  const wrap = el('<div></div>');
+  wrap.appendChild(el(
+    '<div style="text-align:center;margin:26px 0 22px;">'+
+      '<div style="width:56px;height:56px;border-radius:16px;background:var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;">🌾</div>'+
+      '<h1 style="font-size:22px;">Welcome to FarmSync</h1>'+
+      '<p style="font-size:13px;color:var(--text-muted);margin-top:6px;">Book procurement slots. Skip the physical queue.</p>'+
+    '</div>'
+  ));
+
+  const card = el('<div class="card"></div>');
+  if(!f.otpSent){
+    card.appendChild(el('<div class="field"><label>Mobile Number</label><input class="input" id="mobileInput" type="tel" maxlength="10" placeholder="98765 43210" value="'+f.profile.mobile+'"/></div>'));
+    const sendBtn = el('<button class="btn btn-primary btn-block">Send OTP</button>');
+    sendBtn.onclick = ()=>{
+      const val = document.getElementById('mobileInput').value.trim();
+      if(val.length!==10){ showToast('Enter a valid 10-digit mobile number','⚠️'); return; }
+      f.profile.mobile = val;
+      f.otpSent = true;
+      render();
+      showToast('OTP sent (prototype OTP: 123456)','📩');
+    };
+    card.appendChild(sendBtn);
+  } else {
+    card.appendChild(el('<p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Enter the 6-digit OTP sent to <b>+91 '+f.profile.mobile+'</b>. Prototype OTP is <span style="font-family:var(--font-mono);color:var(--primary);font-weight:700;">123456</span>.</p>'));
+    const otpRow = el('<div class="otp-row" style="margin-bottom:14px;"></div>');
+    for(let i=0;i<6;i++){
+      const inp = el('<input maxlength="1" inputmode="numeric" value="'+(f.otp[i]||'')+'"/>');
+      inp.addEventListener('input', (e)=>{
+        f.otp[i] = e.target.value.replace(/[^0-9]/g,'');
+        if(f.otp[i] && otpRow.children[i+1]) otpRow.children[i+1].focus();
+      });
+      otpRow.appendChild(inp);
+    }
+    card.appendChild(otpRow);
+    const verifyBtn = el('<button class="btn btn-primary btn-block">Verify & Continue</button>');
+    verifyBtn.onclick = ()=>{
+      const code = f.otp.join('');
+      if(code !== '123456'){ showToast('Incorrect OTP. Use 123456 for this prototype.','⚠️'); return; }
+      f.loggedIn = true;
+      f.screen = 'dashboard';
+      render();
+      showToast('Welcome back, '+f.profile.name.split(' ')[0]+'!','👋');
+    };
+    card.appendChild(verifyBtn);
+    const resend = el('<button class="btn btn-ghost btn-block" style="margin-top:4px;">Change number</button>');
+    resend.onclick = ()=>{ f.otpSent=false; f.otp=['','','','','','']; render(); };
+    card.appendChild(resend);
+  }
+  wrap.appendChild(card);
+
+  wrap.appendChild(el(
+    '<div class="card" style="margin-top:12px;">'+
+    '<div class="section-label">New farmer? Registration details</div>'+
+    '<div class="list-row"><span class="lr-label">Name</span><span class="lr-value">'+f.profile.name+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Farmer ID</span><span class="lr-value" style="font-family:var(--font-mono);">'+f.profile.farmerId+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Village</span><span class="lr-value">'+f.profile.village+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">District</span><span class="lr-value">'+f.profile.district+'</span></div>'+
+    '</div>'
+  ));
+  return wrap;
+}
+
+/* ---- Screen: Dashboard ---- */
+function screenFarmerDashboard(){
+  const f = state.farmer;
+  const wrap = el('<div></div>');
+  wrap.appendChild(el(
+    '<div style="margin-bottom:16px;">'+
+      '<p style="font-size:13px;color:var(--text-muted);">'+t('goodMorning')+',</p>'+
+      '<h1 style="font-size:21px;">'+f.profile.name.split(' ')[0]+' 👋</h1>'+
+    '</div>'
+  ));
+
+  if(f.activeBooking){
+    const b = f.activeBooking;
+    const c = findCentre(b.centreId);
+    const w = computeWait(b.centreId, b.token);
+    const card = el('<div class="token-badge"></div>');
+    card.style.cursor='pointer';
+    card.innerHTML =
+      '<div class="tb-label">Upcoming Appointment · Tap for details</div>'+
+      '<div class="tb-token">'+b.token+'</div>'+
+      '<div class="tb-meta"><span>'+CROP_ICONS[b.crop]+' '+b.crop+' · '+b.quantity+' qtl</span><span>'+b.slot+'</span></div>'+
+      '<div class="perforation"></div>'+
+      '<div class="tb-meta"><span>'+c.name.split('—')[1].trim()+'</span><span>'+b.date+'</span></div>';
+    card.onclick = ()=>{ f.screen='appointment'; render(); };
+    wrap.appendChild(card);
+
+    const statusRow = el('<div class="card" style="margin-top:12px;"></div>');
+    statusRow.appendChild(el('<div class="section-label">Live Status</div>'));
+    const grid = el('<div style="display:flex;gap:10px;"></div>');
+    grid.appendChild(el('<div style="flex:1;text-align:center;padding:10px;background:var(--surface-2);border-radius:10px;"><div style="font-size:20px;font-weight:800;color:var(--primary);">'+w.ahead+'</div><div style="font-size:11px;color:var(--text-muted);">farmers ahead</div></div>'));
+    grid.appendChild(el('<div style="flex:1;text-align:center;padding:10px;background:var(--surface-2);border-radius:10px;"><div style="font-size:20px;font-weight:800;color:var(--accent-dark);">~'+w.mins+' min</div><div style="font-size:11px;color:var(--text-muted);">est. wait</div></div>'));
+    statusRow.appendChild(grid);
+    statusRow.appendChild(el('<div style="margin-top:10px;"><span class="badge badge-'+statusBadgeType(b.status)+'"><span class="badge-dot"></span>'+b.status+'</span> <span class="badge badge-'+(b.paymentStatus==='Completed'?'success':'warning')+'" style="margin-left:6px;">Payment: '+b.paymentStatus+'</span></div>'));
+    wrap.appendChild(statusRow);
+
+    const quickRow = el('<div style="display:flex;gap:10px;margin-top:12px;"></div>');
+    const trackBtn = el('<button class="btn btn-primary btn-block">Track Queue</button>');
+    trackBtn.onclick=()=>{ f.screen='queue'; render(); };
+    const qrBtn = el('<button class="btn btn-outline btn-block">Show QR</button>');
+    qrBtn.onclick=()=>{ f.screen='checkin'; render(); };
+    quickRow.appendChild(trackBtn); quickRow.appendChild(qrBtn);
+    wrap.appendChild(quickRow);
+
+    const moreRow = el('<div style="display:flex;gap:10px;margin-top:10px;"></div>');
+    const statusBtn = el('<button class="btn btn-ghost btn-block" style="border:1.5px solid var(--border);">📋 Procurement Tracking</button>');
+    statusBtn.onclick=()=>{ f.screen='status'; render(); };
+    const payBtn = el('<button class="btn btn-ghost btn-block" style="border:1.5px solid var(--border);">💳 Payments</button>');
+    payBtn.onclick=()=>{ f.screen='payments'; render(); };
+    moreRow.appendChild(statusBtn); moreRow.appendChild(payBtn);
+    wrap.appendChild(moreRow);
+
+    const apptRow = el('<button class="btn btn-outline btn-block" style="margin-top:10px;">📅 View My Appointment</button>');
+    apptRow.onclick = ()=>{ f.screen='appointment'; render(); };
+    wrap.appendChild(apptRow);
+
+  } else {
+    const empty = el(
+      '<div class="card">'+
+      '<div class="empty-state">'+
+        '<div class="es-ic">🗓️</div>'+
+        '<h4>'+t('noAppointment')+'</h4>'+
+        '<p>'+t('noAppointmentSub')+'</p>'+
+      '</div></div>'
+    );
+    const btn = el('<button class="btn btn-accent btn-block">'+t('bookSlotNow')+'</button>');
+    btn.onclick = ()=>{ f.screen='discovery'; render(); };
+    empty.appendChild(btn);
+    wrap.appendChild(empty);
+  }
+
+  const quickActions = el('<div class="card" style="margin-top:12px;"></div>');
+  quickActions.appendChild(el('<div class="section-label">Quick Actions</div>'));
+  const qa = el('<div class="chip-row"></div>');
+  const actions = [
+    ['discovery','📍','Book Slot'],
+    ['discovery','🏢','Find Centre'],
+    ['queue','⏱','Track Queue'],
+    ['payments','💳','Payments'],
+    ['history','🧾','History'],
+  ];
+  actions.forEach(([scr,ic,label])=>{
+    const c = el('<div class="chip"><span class="chip-ic">'+ic+'</span>'+label+'</div>');
+    c.style.cursor='pointer';
+    c.onclick = ()=>{
+      if((scr==='queue') && !f.activeBooking){ showToast('No active booking to track yet','ℹ️'); return; }
+      f.screen=scr; render();
+    };
+    qa.appendChild(c);
+  });
+  quickActions.appendChild(qa);
+  wrap.appendChild(quickActions);
+
+  wrap.appendChild(el(
+    '<div class="card" style="margin-top:12px;">'+
+    '<div class="section-label">Past Procurement</div>'+
+    (f.bookings.slice(0,2).map(b=>(
+      '<div class="list-row"><span class="lr-label">'+CROP_ICONS[b.crop]+' '+b.crop+' · '+b.date+'</span><span class="lr-value">'+fmtINR(b.amount)+'</span></div>'
+    )).join(''))+
+    '</div>'
+  ));
+
+  return wrap;
+}
+function statusBadgeType(status){
+  if(status==='Completed'||status==='Payment Completed') return 'success';
+  if(status==='Booked') return 'info';
+  if(status==='Skipped'||status==='Rejected') return 'danger';
+  return 'warning';
+}
+
+/* ---- Screen: Centre Discovery ---- */
+function openDirections(c){
+  const url = 'https://www.google.com/maps/dir/?api=1&destination='+c.lat+','+c.lng;
+  window.open(url, '_blank');
+  showToast('Opening directions to '+c.name.split('—')[1].trim(),'🧭');
+}
+
+function discoveryMapSVG(centres, highlightId){
+  const lats = centres.map(c=>c.lat), lngs = centres.map(c=>c.lng);
+  const minLat=Math.min(...lats), maxLat=Math.max(...lats), minLng=Math.min(...lngs), maxLng=Math.max(...lngs);
+  const pad=40, w=340, h=260;
+  function pt(c){
+    const x = pad + ((c.lng-minLng)/((maxLng-minLng)||1)) * (w-2*pad);
+    const y = h-pad - ((c.lat-minLat)/((maxLat-minLat)||1)) * (h-2*pad);
+    return [x,y];
+  }
+  let markers = '';
+  centres.forEach(c=>{
+    const [x,y] = pt(c);
+    const load = centreLoad(c);
+    const color = load==='low' ? '#2E7D4F' : load==='medium' ? '#B4791A' : '#C0392B';
+    const big = c.id===highlightId;
+    markers += '<g>'+
+      '<circle cx="'+x+'" cy="'+(y+2)+'" r="'+(big?13:10)+'" fill="rgba(18,63,38,0.15)"/>'+
+      '<path d="M'+x+' '+(y-16)+' c-8 0 -14 6 -14 14 c0 10 14 24 14 24 s14 -14 14 -24 c0 -8 -6 -14 -14 -14 z" fill="'+color+'" stroke="#fff" stroke-width="2"/>'+
+      '<circle cx="'+x+'" cy="'+(y-2)+'" r="5" fill="#fff"/>'+
+      '<text x="'+x+'" y="'+(y+34)+'" font-size="9.5" font-family="Inter,sans-serif" font-weight="700" fill="#123F26" text-anchor="middle">'+c.id+'</text>'+
+      '</g>';
+  });
+  // farmer marker roughly center-bottom
+  const fx = w/2, fy = h-18;
+  markers += '<g><circle cx="'+fx+'" cy="'+fy+'" r="8" fill="#C8912A" stroke="#fff" stroke-width="2.5"/><text x="'+fx+'" y="'+(fy+20)+'" font-size="9" font-family="Inter,sans-serif" font-weight="700" fill="#5C6B5F" text-anchor="middle">You</text></g>';
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="220" xmlns="http://www.w3.org/2000/svg">'+
+    '<rect width="'+w+'" height="'+h+'" fill="#EAF0E6"/>'+
+    '<path d="M0 40 Q 90 10 180 45 T 340 30" stroke="#D7E2D0" stroke-width="14" fill="none"/>'+
+    '<path d="M0 180 Q 120 210 220 175 T 340 200" stroke="#D7E2D0" stroke-width="10" fill="none"/>'+
+    markers+
+    '</svg>';
+}
+
+function screenDiscovery(){
+  const f = state.farmer;
+  if(!f.discoveryView) f.discoveryView = 'list';
+  const wrap = el('<div></div>');
+  wrap.appendChild(el('<p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Centres eligible for your crops near '+f.profile.village+', '+f.profile.district+'.</p>'));
+
+  const toggle = el('<div style="display:flex;gap:6px;margin-bottom:12px;"></div>');
+  const listBtn = el('<button class="btn btn-sm" style="flex:1;">📋 List View</button>');
+  const mapBtn = el('<button class="btn btn-sm" style="flex:1;">🗺️ Map View</button>');
+  listBtn.className = 'btn btn-sm '+(f.discoveryView==='list'?'btn-primary':'btn-outline');
+  mapBtn.className = 'btn btn-sm '+(f.discoveryView==='map'?'btn-primary':'btn-outline');
+  listBtn.onclick = ()=>{ f.discoveryView='list'; render(); };
+  mapBtn.onclick = ()=>{ f.discoveryView='map'; render(); };
+  toggle.appendChild(listBtn); toggle.appendChild(mapBtn);
+  wrap.appendChild(toggle);
+
+  if(f.discoveryView==='map'){
+    const mapCard = el('<div class="card" style="padding:10px;"></div>');
+    mapCard.appendChild(el(discoveryMapSVG(state.centres)));
+    wrap.appendChild(mapCard);
+    wrap.appendChild(el('<div class="section-label" style="margin-top:12px;">Centres</div>'));
+  }
+
+  state.centres.forEach(c=>{
+    const w = computeWait(c.id);
+    const load = centreLoad(c);
+    const card = el('<div class="card"></div>');
+    card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'+
+        '<div><h4 style="font-size:14.5px;">'+c.name.split('—')[1].trim()+'</h4>'+
+        '<p style="font-size:12px;color:var(--text-muted);margin-top:2px;">'+c.address+'</p></div>'+
+        '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">'+
+        '<span class="badge '+(c.bookingOpen?'badge-success':'badge-danger')+'">'+(c.bookingOpen?'Open':'Closed')+'</span>'+
+        '<span class="centre-load-badge load-'+load+'">'+(load==='low'?'🟢 Low':load==='medium'?'🟡 Medium':'🔴 High')+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="hairline"></div>'+
+      '<div style="display:flex;gap:14px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;margin-bottom:8px;">'+
+        '<span>📏 '+c.distanceKm+' km</span><span>🚗 ~'+c.travelMin+' min</span><span>🕒 '+c.hours+'</span><span>⏱ ~'+w.mins+' min wait</span>'+
+      '</div>'+
+      '<div class="progress-track" style="margin-bottom:6px;"><div class="progress-fill" style="width:'+Math.round(100*c.bookedToday/c.dailyCapacity)+'%;"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-faint);margin-bottom:10px;">'+
+        '<span>'+c.bookedToday+' / '+c.dailyCapacity+' capacity booked</span><span>'+w.ahead+' in queue · '+c.activeCounters+'/'+c.counters+' counters</span>'+
+      '</div>';
+    const btnRow = el('<div style="display:flex;gap:8px;"></div>');
+    const detailsBtn = el('<button class="btn btn-outline btn-sm" style="flex:1;">Centre Details</button>');
+    detailsBtn.onclick = ()=>{ f.centreDetailId = c.id; f.screen='centreDetail'; render(); };
+    const dirBtn = el('<button class="btn btn-outline btn-sm" style="flex:0 0 auto;">🧭</button>');
+    dirBtn.onclick = ()=>openDirections(c);
+    btnRow.appendChild(detailsBtn); btnRow.appendChild(dirBtn);
+    card.appendChild(btnRow);
+    const btn = el('<button class="btn btn-primary btn-block" style="margin-top:8px;">Book Slot</button>');
+    if(!c.bookingOpen){ btn.disabled=true; btn.textContent='Booking Closed'; }
+    btn.onclick = ()=>{
+      f.bookingDraft = {crop:null, quantity:'', centreId:c.id, date:null, slot:null};
+      f.screen='booking'; f.bookingStep=1;
+      render();
+    };
+    card.appendChild(btn);
+    wrap.appendChild(card);
+  });
+  return wrap;
+}
+
+/* ---- Screen: Centre Details ---- */
+function screenCentreDetail(){
+  const f = state.farmer;
+  const c = findCentre(f.centreDetailId) || state.centres[0];
+  const w = computeWait(c.id);
+  const load = centreLoad(c);
+  const wrap = el('<div></div>');
+
+  const mapCard = el('<div class="card" style="padding:10px;"></div>');
+  mapCard.appendChild(el(discoveryMapSVG(state.centres, c.id)));
+  wrap.appendChild(mapCard);
+
+  const card = el('<div class="card" style="margin-top:12px;"></div>');
+  card.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'+
+      '<h3 style="font-size:16px;">'+c.name.split('—')[1].trim()+'</h3>'+
+      '<span class="badge '+(c.bookingOpen?'badge-success':'badge-danger')+'">'+(c.bookingOpen?'Open':'Closed')+'</span>'+
+    '</div>'+
+    '<p style="font-size:12.5px;color:var(--text-muted);margin-top:3px;">'+c.address+'</p>'+
+    '<div class="hairline"></div>'+
+    '<div class="list-row"><span class="lr-label">Working Hours</span><span class="lr-value">'+c.hours+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Distance / Travel</span><span class="lr-value">'+c.distanceKm+' km · ~'+c.travelMin+' min</span></div>'+
+    '<div class="list-row"><span class="lr-label">Current Queue</span><span class="lr-value">'+w.ahead+' farmers</span></div>'+
+    '<div class="list-row"><span class="lr-label">Active Counters</span><span class="lr-value">'+c.activeCounters+' / '+c.counters+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Estimated Wait</span><span class="lr-value">~'+w.mins+' min</span></div>'+
+    '<div class="list-row"><span class="lr-label">Centre Load</span><span class="lr-value centre-load-badge load-'+load+'">'+load+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Accepted Crops</span><span class="lr-value">'+c.crops.map(cr=>CROP_ICONS[cr]).join(' ')+' '+c.crops.join(', ')+'</span></div>';
+  wrap.appendChild(card);
+
+  wrap.appendChild(el('<div class="section-label" style="margin-top:14px;">Available Slots Today</div>'));
+  const slotChips = el('<div class="chip-row"></div>');
+  ['8–9 AM','9–10 AM','10–11 AM','1–2 PM'].forEach((s,i)=>{
+    slotChips.appendChild(el('<div class="chip">'+s+' <span style="color:var(--text-faint);font-weight:500;">('+(3+i*2)+' left)</span></div>'));
+  });
+  wrap.appendChild(slotChips);
+
+  const actions = el('<div style="display:flex;gap:10px;margin-top:16px;"></div>');
+  const dirBtn = el('<button class="btn btn-outline btn-block">🧭 Get Directions</button>');
+  dirBtn.onclick = ()=>openDirections(c);
+  const bookBtn = el('<button class="btn btn-primary btn-block">Book Slot</button>');
+  if(!c.bookingOpen){ bookBtn.disabled=true; }
+  bookBtn.onclick = ()=>{
+    f.bookingDraft = {crop:null, quantity:'', centreId:c.id, date:null, slot:null};
+    f.screen='booking'; f.bookingStep=1; render();
+  };
+  actions.appendChild(dirBtn); actions.appendChild(bookBtn);
+  wrap.appendChild(actions);
+  return wrap;
+}
+
+/* ---- Screen: Booking (multi-step) ---- */
+function screenBooking(){
+  const f = state.farmer;
+  if(!f.bookingStep) f.bookingStep = 1;
+  const wrap = el('<div></div>');
+  const stepper = el('<div class="stepper"></div>');
+  for(let i=1;i<=4;i++){ const s=el('<div class="step"></div>'); if(i<=f.bookingStep) s.classList.add('done'); stepper.appendChild(s); }
+  wrap.appendChild(stepper);
+
+  const d = f.bookingDraft;
+
+  if(f.bookingStep===1){
+    wrap.appendChild(el('<h3 style="font-size:15px;margin-bottom:12px;">Step 1 · Select Crop</h3>'));
+    const chips = el('<div class="chip-row"></div>');
+    ['Paddy','Wheat','Maize','Cotton','Other'].forEach(crop=>{
+      const c = el('<div class="chip"><span class="chip-ic">'+CROP_ICONS[crop]+'</span>'+crop+'</div>');
+      if(d.crop===crop) c.classList.add('selected');
+      c.style.cursor='pointer';
+      c.onclick=()=>{ d.crop=crop; render(); };
+      chips.appendChild(c);
+    });
+    wrap.appendChild(chips);
+    wrap.appendChild(el('<div class="field" style="margin-top:16px;"><label>Expected Quantity (quintals)</label><input class="input" id="qtyInput" type="number" min="1" placeholder="e.g. 20" value="'+(d.quantity||'')+'"/></div>'));
+    const next = el('<button class="btn btn-primary btn-block">Continue</button>');
+    next.onclick = ()=>{
+      const qtyEl = document.getElementById('qtyInput');
+      const qty = parseFloat(qtyEl.value);
+      if(!d.crop){ showToast('Please select a crop','⚠️'); return; }
+      if(!qty || qty<=0){ showToast('Enter expected quantity','⚠️'); return; }
+      d.quantity = qty;
+      f.bookingStep=2; render();
+    };
+    wrap.appendChild(next);
+  }
+
+  else if(f.bookingStep===2){
+    wrap.appendChild(el('<h3 style="font-size:15px;margin-bottom:12px;">Step 2 · Select Centre</h3>'));
+    const eligible = state.centres.filter(c=>c.crops.includes(d.crop) || d.crop==='Other');
+    eligible.forEach(c=>{
+      const w = computeWait(c.id);
+      const full = c.bookedToday >= c.dailyCapacity;
+      const row = el('<div class="card" style="padding:12px;"></div>');
+      row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+        '<div><b style="font-size:13.5px;">'+c.name.split('—')[1].trim()+'</b><div style="font-size:11.5px;color:var(--text-muted);">'+c.distanceKm+' km · ~'+w.mins+' min wait</div></div>'+
+        '<span class="centre-load-badge load-'+centreLoad(c)+'">'+centreLoad(c)+'</span></div>';
+      row.style.cursor = full? 'not-allowed':'pointer';
+      row.style.opacity = full? '0.55':'1';
+      if(d.centreId===c.id) row.style.borderColor='var(--primary)';
+      row.onclick = ()=>{ if(full){ showToast('This centre is full today','⚠️'); return; } d.centreId=c.id; render(); };
+      wrap.appendChild(row);
+    });
+    const nav = el('<div style="display:flex;gap:10px;margin-top:14px;"></div>');
+    const back = el('<button class="btn btn-outline btn-block">Back</button>');
+    back.onclick=()=>{ f.bookingStep=1; render(); };
+    const next = el('<button class="btn btn-primary btn-block">Continue</button>');
+    next.onclick=()=>{ if(!d.centreId){ showToast('Select a procurement centre','⚠️'); return; } f.bookingStep=3; render(); };
+    nav.appendChild(back); nav.appendChild(next);
+    wrap.appendChild(nav);
+  }
+
+  else if(f.bookingStep===3){
+    wrap.appendChild(el('<h3 style="font-size:15px;margin-bottom:12px;">Step 3 · Select Date & Slot</h3>'));
+    const dates = ['26 Aug 2026','27 Aug 2026','28 Aug 2026','29 Aug 2026'];
+    wrap.appendChild(el('<div class="section-label">Date</div>'));
+    const dateRow = el('<div class="chip-row" style="margin-bottom:16px;"></div>');
+    dates.forEach(dt=>{
+      const c = el('<div class="chip">'+dt+'</div>');
+      if(d.date===dt) c.classList.add('selected');
+      c.style.cursor='pointer';
+      c.onclick=()=>{ d.date=dt; render(); };
+      dateRow.appendChild(c);
+    });
+    wrap.appendChild(dateRow);
+
+    wrap.appendChild(el('<div class="section-label">Available Time Slots</div>'));
+    const slots = [
+      {time:'8:00–9:00 AM', capLeft:6}, {time:'9:00–10:00 AM', capLeft:3}, {time:'10:00–11:00 AM', capLeft:9},
+      {time:'11:00 AM–12:00 PM', capLeft:0}, {time:'1:00–2:00 PM', capLeft:11}, {time:'2:00–3:00 PM', capLeft:2},
+    ];
+    const slotGrid = el('<div class="chip-row"></div>');
+    slots.forEach(s=>{
+      const full = s.capLeft===0;
+      const c = el('<div class="chip" style="flex-direction:column;align-items:flex-start;'+(full?'opacity:0.45;cursor:not-allowed;':'cursor:pointer;')+'"><span>'+s.time+'</span><span style="font-size:10.5px;font-weight:500;color:var(--text-faint);">'+(full?'Full':s.capLeft+' left')+'</span></div>');
+      if(d.slot===s.time) c.classList.add('selected');
+      c.onclick=()=>{ if(full){ showToast('This slot is full','⚠️'); return; } d.slot=s.time; render(); };
+      slotGrid.appendChild(c);
+    });
+    wrap.appendChild(slotGrid);
+
+    const nav = el('<div style="display:flex;gap:10px;margin-top:16px;"></div>');
+    const back = el('<button class="btn btn-outline btn-block">Back</button>');
+    back.onclick=()=>{ f.bookingStep=2; render(); };
+    const next = el('<button class="btn btn-primary btn-block">Review</button>');
+    next.onclick=()=>{ if(!d.date||!d.slot){ showToast('Select date and time slot','⚠️'); return; } f.bookingStep=4; render(); };
+    nav.appendChild(back); nav.appendChild(next);
+    wrap.appendChild(nav);
+  }
+
+  else if(f.bookingStep===4){
+    wrap.appendChild(el('<h3 style="font-size:15px;margin-bottom:12px;">Step 4 · Review & Confirm</h3>'));
+    const c = findCentre(d.centreId);
+    const card = el('<div class="card"></div>');
+    card.innerHTML =
+      '<div class="list-row"><span class="lr-label">Crop</span><span class="lr-value">'+CROP_ICONS[d.crop]+' '+d.crop+'</span></div>'+
+      '<div class="list-row"><span class="lr-label">Quantity</span><span class="lr-value">'+d.quantity+' quintals</span></div>'+
+      '<div class="list-row"><span class="lr-label">Centre</span><span class="lr-value">'+c.name.split('—')[1].trim()+'</span></div>'+
+      '<div class="list-row"><span class="lr-label">Date</span><span class="lr-value">'+d.date+'</span></div>'+
+      '<div class="list-row"><span class="lr-label">Time Slot</span><span class="lr-value">'+d.slot+'</span></div>'+
+      '<div class="list-row"><span class="lr-label">Farmer</span><span class="lr-value">'+f.profile.name+' ('+f.profile.farmerId+')</span></div>';
+    wrap.appendChild(card);
+
+    const travelCard = el('<div class="card" style="margin-top:12px;padding:10px;"></div>');
+    travelCard.appendChild(el('<div class="section-label">Centre Location & Travel</div>'));
+    travelCard.appendChild(el(discoveryMapSVG(state.centres, c.id)));
+    const travelRow = el('<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-top:8px;padding:0 4px;"><span>📏 '+c.distanceKm+' km away</span><span>🚗 ~'+c.travelMin+' min travel time</span></div>');
+    travelCard.appendChild(travelRow);
+    wrap.appendChild(travelCard);
+
+    const nav = el('<div style="display:flex;gap:10px;margin-top:16px;"></div>');
+    const back = el('<button class="btn btn-outline btn-block">Back</button>');
+    back.onclick=()=>{ f.bookingStep=3; render(); };
+    const confirm = el('<button class="btn btn-accent btn-block">Confirm Booking</button>');
+    confirm.onclick = confirmBooking;
+    nav.appendChild(back); nav.appendChild(confirm);
+    wrap.appendChild(nav);
+  }
+
+  return wrap;
+}
+
+function confirmBooking(){
+  const f = state.farmer;
+  const d = f.bookingDraft;
+  const c = findCentre(d.centreId);
+  // Token is issued sequentially from the centre's own queue, so the demo
+  // scenario reproduces exactly: Centre A has 14 farmers waiting -> Token A146.
+  const token = nextTokenFor(d.centreId);
+  const bookingId = 'BK-'+(21000+state.queues[d.centreId].length);
+
+  const booking = {
+    id: bookingId, token, crop:d.crop, quantity:d.quantity, centreId:d.centreId,
+    centreName:c.name, date:d.date, slot:d.slot,
+    status:'Booked', paymentStatus:'—', amount:null, txnId:null
+  };
+  f.activeBooking = booking;
+  c.bookedToday += 1;
+
+  const q = state.queues[d.centreId];
+  q.push({ token, farmer:f.profile.name, farmerId:f.profile.farmerId, crop:d.crop, quantity:d.quantity, status:'Booked', centreId:d.centreId });
+
+  f.notifications.unshift({id:Date.now(), title:'Booking Confirmed', body:'Your slot at '+c.name.split('—')[1].trim()+' is booked. Token '+token+'.', time:'Just now', read:false, icon:'✅'});
+
+  f.screen='confirmation';
+  render();
+  showToast('Booking confirmed — Token '+token,'🎟️');
+}
+
+/* ---- Screen: Confirmation ---- */
+function screenConfirmation(){
+  const f = state.farmer;
+  const b = f.activeBooking;
+  const wrap = el('<div></div>');
+  if(!b){ wrap.appendChild(el('<div class="empty-state"><p>No booking found.</p></div>')); return wrap; }
+  const c = findCentre(b.centreId);
+
+  wrap.appendChild(el('<div style="text-align:center;margin-bottom:16px;"><div style="font-size:40px;">✅</div><h3 style="font-size:17px;margin-top:8px;">Slot Booked Successfully</h3><p style="font-size:12.5px;color:var(--text-muted);margin-top:4px;">Booking ID '+b.id+'</p></div>'));
+
+  const card = el('<div class="token-badge"></div>');
+  card.innerHTML =
+    '<div class="tb-label">Your Digital Token</div>'+
+    '<div class="tb-token">'+b.token+'</div>'+
+    '<div class="tb-meta"><span>'+CROP_ICONS[b.crop]+' '+b.crop+' · '+b.quantity+' qtl</span><span>'+b.slot+'</span></div>'+
+    '<div class="perforation"></div>'+
+    '<div class="tb-meta"><span>'+c.name.split('—')[1].trim()+'</span><span>'+b.date+'</span></div>';
+  wrap.appendChild(card);
+
+  const qrCard = el('<div class="card" style="margin-top:14px;text-align:center;"></div>');
+  qrCard.appendChild(el('<div class="section-label">Show this QR at check-in</div>'));
+  qrCard.appendChild(el('<div class="qr-box">'+qrPatternSVG(b.id+b.token,150)+'</div>'));
+  qrCard.appendChild(el('<p style="font-size:11.5px;color:var(--text-faint);margin-top:8px;">'+b.id+'</p>'));
+  wrap.appendChild(qrCard);
+
+  const nav = el('<div style="display:flex;gap:10px;margin-top:16px;"></div>');
+  const cancel = el('<button class="btn btn-danger-outline btn-block">Cancel</button>');
+  cancel.onclick = ()=>{
+    if(confirm('Cancel this booking?')){
+      const cc = findCentre(b.centreId); cc.bookedToday=Math.max(0,cc.bookedToday-1);
+      state.queues[b.centreId] = state.queues[b.centreId].filter(x=>x.token!==b.token);
+      f.activeBooking=null; f.screen='dashboard'; render(); showToast('Booking cancelled','🗑️');
+    }
+  };
+  const done = el('<button class="btn btn-primary btn-block">View My Appointment</button>');
+  done.onclick = ()=>{ f.screen='appointment'; render(); };
+  nav.appendChild(cancel); nav.appendChild(done);
+  wrap.appendChild(nav);
+  return wrap;
+}
+
+/* ---- Screen: My Appointment ---- */
+function screenAppointment(){
+  const f = state.farmer;
+  const b = f.activeBooking;
+  const wrap = el('<div></div>');
+  if(!b){
+    wrap.appendChild(el('<div class="empty-state"><div class="es-ic">📅</div><h4>No active appointment</h4><p>Book a slot to see your appointment details here.</p></div>'));
+    const btn = el('<button class="btn btn-accent btn-block">Book a Slot</button>');
+    btn.onclick = ()=>{ f.screen='discovery'; render(); };
+    wrap.appendChild(btn);
+    return wrap;
+  }
+  const c = findCentre(b.centreId);
+  const w = computeWait(b.centreId, b.token);
+
+  const card = el('<div class="token-badge"></div>');
+  card.innerHTML =
+    '<div class="tb-label">Booking ID '+b.id+'</div>'+
+    '<div class="tb-token">'+b.token+'</div>'+
+    '<div class="tb-meta"><span>'+CROP_ICONS[b.crop]+' '+b.crop+' · '+b.quantity+' qtl</span><span>'+b.slot+'</span></div>'+
+    '<div class="perforation"></div>'+
+    '<div class="tb-meta"><span>'+c.name.split('—')[1].trim()+'</span><span>'+b.date+'</span></div>';
+  wrap.appendChild(card);
+
+  wrap.appendChild(el(
+    '<div class="card" style="margin-top:12px;">'+
+    '<div class="section-label">Live Queue Position</div>'+
+    '<div style="display:flex;gap:10px;">'+
+      '<div style="flex:1;text-align:center;padding:10px;background:var(--surface-2);border-radius:10px;"><div style="font-size:20px;font-weight:800;color:var(--primary);">'+w.ahead+'</div><div style="font-size:11px;color:var(--text-muted);">farmers ahead</div></div>'+
+      '<div style="flex:1;text-align:center;padding:10px;background:var(--surface-2);border-radius:10px;"><div style="font-size:20px;font-weight:800;color:var(--accent-dark);">~'+w.mins+' min</div><div style="font-size:11px;color:var(--text-muted);">est. wait</div></div>'+
+    '</div>'+
+    '<div style="margin-top:10px;"><span class="badge badge-'+statusBadgeType(b.status)+'"><span class="badge-dot"></span>'+b.status+'</span></div>'+
+    '</div>'
+  ));
+
+  const qrCard = el('<div class="card" style="margin-top:12px;text-align:center;"></div>');
+  qrCard.appendChild(el('<div class="section-label">QR Check-in Pass</div>'));
+  qrCard.appendChild(el('<div class="qr-box" style="width:120px;height:120px;">'+qrPatternSVG(b.id+b.token,110)+'</div>'));
+  wrap.appendChild(qrCard);
+
+  wrap.appendChild(el(
+    '<div class="card" style="margin-top:12px;">'+
+    '<div class="section-label">Centre Details</div>'+
+    '<div class="list-row"><span class="lr-label">Centre</span><span class="lr-value">'+c.name.split('—')[1].trim()+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Address</span><span class="lr-value" style="text-align:right;max-width:60%;">'+c.address+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Distance / Travel</span><span class="lr-value">'+c.distanceKm+' km · ~'+c.travelMin+' min</span></div>'+
+    '<div class="list-row"><span class="lr-label">Working Hours</span><span class="lr-value">'+c.hours+'</span></div>'+
+    '</div>'
+  ));
+
+  const actionsGrid = el('<div class="grid-2" style="margin-top:12px;"></div>');
+  const dirBtn = el('<button class="btn btn-outline btn-block">🧭 Get Directions</button>');
+  dirBtn.onclick = ()=>openDirections(c);
+  const queueBtn = el('<button class="btn btn-primary btn-block">⏱ Track Live Queue</button>');
+  queueBtn.onclick = ()=>{ f.screen='queue'; render(); };
+  actionsGrid.appendChild(dirBtn); actionsGrid.appendChild(queueBtn);
+  wrap.appendChild(actionsGrid);
+
+  const nav = el('<div style="display:flex;gap:10px;margin-top:10px;"></div>');
+  const cancel = el('<button class="btn btn-danger-outline btn-block">Cancel Booking</button>');
+  cancel.onclick = ()=>{
+    if(confirm('Cancel this booking?')){
+      const cc = findCentre(b.centreId); cc.bookedToday=Math.max(0,cc.bookedToday-1);
+      state.queues[b.centreId] = state.queues[b.centreId].filter(x=>x.token!==b.token);
+      f.activeBooking=null; f.screen='dashboard'; render(); showToast('Booking cancelled','🗑️');
+    }
+  };
+  const reschedule = el('<button class="btn btn-outline btn-block">Reschedule</button>');
+  reschedule.onclick = ()=>{
+    if(!confirm('Reschedule this booking? You will be taken back to slot selection.')) return;
+    const cc = findCentre(b.centreId); cc.bookedToday=Math.max(0,cc.bookedToday-1);
+    state.queues[b.centreId] = state.queues[b.centreId].filter(x=>x.token!==b.token);
+    f.bookingDraft = {crop:b.crop, quantity:b.quantity, centreId:b.centreId, date:null, slot:null};
+    f.activeBooking = null; f.bookingStep=3; f.screen='booking'; render();
+    showToast('Select a new date & slot to reschedule','🔁');
+  };
+  nav.appendChild(cancel); nav.appendChild(reschedule);
+  wrap.appendChild(nav);
+
+  return wrap;
+}
+
+/* ---- Screen: Live Queue ---- */
+function screenQueue(){
+  const f = state.farmer;
+  const wrap = el('<div></div>');
+  const b = f.activeBooking;
+  if(!b){
+    wrap.appendChild(el('<div class="empty-state"><div class="es-ic">⏱️</div><h4>No active queue</h4><p>Book a slot to start tracking a live queue.</p></div>'));
+    return wrap;
+  }
+  const c = findCentre(b.centreId);
+  const w = computeWait(b.centreId, b.token);
+  const q = state.queues[b.centreId];
+  const myIndex = q.findIndex(x=>x.token===b.token);
+  const currentServing = q.find(x=>x.status==='Processing') || q.find(x=>x.status==='Arrived');
+
+  wrap.appendChild(el('<div class="card" style="text-align:center;"><div class="section-label">Your Token</div><div style="font-family:var(--font-mono);font-size:30px;font-weight:700;color:var(--primary);">'+b.token+'</div></div>'));
+
+  const grid = el('<div class="grid-2" style="margin-top:12px;"></div>');
+  grid.appendChild(el('<div class="card" style="text-align:center;"><div class="stat-value" style="font-size:22px;">'+w.ahead+'</div><div class="stat-label">Farmers Ahead</div></div>'));
+  grid.appendChild(el('<div class="card" style="text-align:center;"><div class="stat-value" style="font-size:22px;color:var(--accent-dark);">~'+w.mins+'m</div><div class="stat-label">Est. Waiting Time</div></div>'));
+  wrap.appendChild(grid);
+
+  wrap.appendChild(el(
+    '<div class="card" style="margin-top:12px;">'+
+    '<div class="list-row"><span class="lr-label">Current Token Serving</span><span class="lr-value">'+(currentServing?currentServing.token:'—')+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Active Counters</span><span class="lr-value">'+c.activeCounters+' / '+c.counters+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Queue Health</span><span class="lr-value badge badge-'+(centreLoad(c)==='low'?'success':centreLoad(c)==='medium'?'warning':'danger')+'">'+centreLoad(c)+'</span></div>'+
+    '</div>'
+  ));
+
+  const simCard = el('<div class="card" style="margin-top:12px;background:var(--primary-light);border-color:var(--primary);"></div>');
+  simCard.appendChild(el('<p style="font-size:12px;color:var(--primary-dark);margin-bottom:8px;"><b>Demo control:</b> simulate the queue moving forward (in production this updates automatically as the officer processes each token).</p>'));
+  const simBtn = el('<button class="btn btn-primary btn-block btn-sm">Simulate Queue Progress →</button>');
+  simBtn.onclick = ()=>{ advanceQueue(b.centreId); render(); };
+  simCard.appendChild(simBtn);
+  wrap.appendChild(simCard);
+
+  return wrap;
+}
+
+function advanceQueue(centreId){
+  const q = state.queues[centreId];
+  let processed = q.find(x=>x.status==='Processing');
+  if(processed){ processed.status='Completed'; }
+  let arrived = q.filter(x=>x.status==='Arrived');
+  if(arrived.length){ arrived[0].status='Processing'; }
+  let booked = q.filter(x=>x.status==='Booked');
+  if(booked.length && arrived.length<2){ booked[0].status='Arrived'; }
+
+  // sync farmer's own booking if it matches
+  const f = state.farmer;
+  if(f.activeBooking && f.activeBooking.centreId===centreId){
+    const mine = q.find(x=>x.token===f.activeBooking.token);
+    if(mine){
+      if(mine.status==='Arrived' && f.activeBooking.status==='Booked'){
+        f.activeBooking.status='Arrived';
+        f.notifications.unshift({id:Date.now(),title:'Turn Approaching',body:'Your token '+mine.token+' will be called soon. Please proceed to the centre.',time:'Just now',read:false,icon:'⏰'});
+      }
+      if(mine.status==='Processing'){ f.activeBooking.status='Verification'; }
+      if(mine.status==='Completed' && f.activeBooking.status!=='Completed'){
+        f.activeBooking.status='Completed';
+        f.notifications.unshift({id:Date.now(),title:'Procurement Completed',body:'Your procurement for token '+mine.token+' is complete.',time:'Just now',read:false,icon:'✅'});
+      }
+    }
+  }
+  showToast('Queue updated','🔄');
+}
+
+/* ---- Screen: Notifications ---- */
+function screenNotifications(){
+  const f = state.farmer;
+  const wrap = el('<div></div>');
+  if(!f.notifications.length){
+    wrap.appendChild(el('<div class="empty-state"><div class="es-ic">🔔</div><h4>No notifications yet</h4><p>Booking updates, reminders and payment alerts will appear here.</p></div>'));
+    return wrap;
+  }
+  f.notifications.forEach(n=>{
+    const card = el('<div class="card" style="display:flex;gap:12px;'+(n.read?'':'border-color:var(--primary);')+'"></div>');
+    card.innerHTML = '<div style="font-size:20px;">'+n.icon+'</div>'+
+      '<div><h4 style="font-size:13.5px;">'+n.title+'</h4><p style="font-size:12px;color:var(--text-muted);margin-top:3px;">'+n.body+'</p><p style="font-size:10.5px;color:var(--text-faint);margin-top:5px;">'+n.time+'</p></div>';
+    card.onclick=()=>{ n.read=true; render(); };
+    wrap.appendChild(card);
+  });
+  return wrap;
+}
+
+/* ---- Screen: QR Check-in ---- */
+function screenCheckin(){
+  const f = state.farmer;
+  const b = f.activeBooking;
+  const wrap = el('<div></div>');
+  if(!b){ wrap.appendChild(el('<div class="empty-state"><p>No active booking.</p></div>')); return wrap; }
+  wrap.appendChild(el('<p style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:14px;">Show this pass to the procurement officer at the centre gate.</p>'));
+  const card = el('<div class="card" style="text-align:center;"></div>');
+  card.innerHTML =
+    '<div class="qr-box">'+qrPatternSVG(b.id+b.token,150)+'</div>'+
+    '<h3 style="font-size:22px;margin-top:14px;font-family:var(--font-mono);color:var(--primary);">'+b.token+'</h3>'+
+    '<p style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">'+f.profile.name+' · '+f.profile.farmerId+'</p>'+
+    '<div class="hairline"></div>'+
+    '<div class="list-row"><span class="lr-label">Centre</span><span class="lr-value">'+findCentre(b.centreId).name.split('—')[1].trim()+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Slot</span><span class="lr-value">'+b.slot+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Status</span><span class="lr-value badge badge-'+statusBadgeType(b.status)+'">'+b.status+'</span></div>';
+  wrap.appendChild(card);
+  return wrap;
+}
+
+/* ---- Screen: Procurement Status Timeline ---- */
+function screenStatus(){
+  const f = state.farmer;
+  const b = f.activeBooking;
+  const wrap = el('<div></div>');
+  if(!b){ wrap.appendChild(el('<div class="empty-state"><p>No active booking.</p></div>')); return wrap; }
+  const stages = ['Booked','Arrived','Verification','Quality Check','Procurement','Completed'];
+  const statusToStage = {Booked:0, Arrived:1, Verification:2, Procurement:4, Completed:5};
+  let curIdx = statusToStage[b.status];
+  if(curIdx===undefined) curIdx=0;
+  // Quality Check happens alongside Procurement completion in this prototype
+  if(curIdx>=4) curIdx = 5;
+
+  const descs = {
+    'Booked':'Your slot is reserved and token generated.',
+    'Arrived':'You have checked in at the centre.',
+    'Verification':'Officer is verifying your farmer ID and crop details.',
+    'Quality Check':'Crop quality and grade are being inspected.',
+    'Procurement':'Quantity measurement and procurement in progress.',
+    'Completed':'Procurement completed and recorded.'
+  };
+
+  const tl = el('<div class="timeline"></div>');
+  stages.forEach((s,i)=>{
+    const item = el('<div class="tl-item"></div>');
+    const markerCol = el('<div class="tl-marker-col"></div>');
+    const dot = el('<div class="tl-dot '+(i<curIdx?'done':i===curIdx?'active':'todo')+'">'+(i<curIdx?'✓':(i+1))+'</div>');
+    markerCol.appendChild(dot);
+    if(i<stages.length-1){ const line = el('<div class="tl-line '+(i<curIdx?'done':'')+'"></div>'); markerCol.appendChild(line); }
+    item.appendChild(markerCol);
+    item.appendChild(el('<div class="tl-content"><h5>'+s+'</h5><p>'+descs[s]+'</p></div>'));
+    tl.appendChild(item);
+  });
+  wrap.appendChild(el('<div class="card"></div>')).appendChild(tl);
+
+  const detailCard = el('<div class="card" style="margin-top:12px;"></div>');
+  detailCard.appendChild(el('<div class="section-label">Procurement Details</div>'));
+  detailCard.appendChild(el('<div class="list-row"><span class="lr-label">Expected Quantity</span><span class="lr-value">'+b.quantity+' qtl</span></div>'));
+  detailCard.appendChild(el('<div class="list-row"><span class="lr-label">Accepted Quantity</span><span class="lr-value">'+(b.acceptedQty!=null?b.acceptedQty+' qtl':'Pending')+'</span></div>'));
+  detailCard.appendChild(el('<div class="list-row"><span class="lr-label">Quality / Inspection Result</span><span class="lr-value">'+(b.inspection?('<span class="badge badge-'+(b.inspection==='Accepted'?'success':b.inspection==='Rejected'?'danger':'warning')+'">'+b.inspection+'</span>'):'Pending')+'</span></div>'));
+  if(b.remarks){ detailCard.appendChild(el('<div class="list-row"><span class="lr-label">Officer Remarks</span><span class="lr-value">'+b.remarks+'</span></div>')); }
+  wrap.appendChild(detailCard);
+
+  return wrap;
+}
+
+/* ---- Screen: Payments ---- */
+function screenPayments(){
+  const f = state.farmer;
+  const wrap = el('<div></div>');
+  const all = f.bookings.slice();
+  if(f.activeBooking) all.unshift(f.activeBooking);
+
+  const totalAmount = all.reduce((s,b)=> s + (b.amount||0), 0);
+  const totalPaid = all.reduce((s,b)=> s + (b.paymentStatus==='Completed' ? (b.amount||0) : 0), 0);
+  const totalPending = totalAmount - totalPaid;
+
+  const summary = el('<div class="grid-3"></div>');
+  summary.appendChild(el('<div class="stat-card" style="text-align:center;"><div class="stat-label">Total Procurement</div><div class="stat-value" style="font-size:19px;">'+fmtINR(totalAmount)+'</div></div>'));
+  summary.appendChild(el('<div class="stat-card" style="text-align:center;"><div class="stat-label">Total Paid</div><div class="stat-value" style="font-size:19px;color:var(--success);">'+fmtINR(totalPaid)+'</div></div>'));
+  summary.appendChild(el('<div class="stat-card" style="text-align:center;"><div class="stat-label">Pending</div><div class="stat-value" style="font-size:19px;color:var(--warning);">'+fmtINR(totalPending)+'</div></div>'));
+  wrap.appendChild(summary);
+
+  const b = f.activeBooking;
+  if(b && b.amount){
+    const card = el('<div class="card" style="margin-top:14px;"></div>');
+    card.innerHTML =
+      '<div class="section-label">Current Payment · Token '+b.token+'</div>'+
+      '<div style="text-align:center;margin:6px 0 10px;">'+
+        '<div class="stat-value" style="font-size:26px;color:var(--primary);">'+fmtINR(b.amount)+'</div>'+
+        '<span class="badge badge-'+(b.paymentStatus==='Completed'?'success':'warning')+'">'+b.paymentStatus+'</span>'+
+      '</div><div class="hairline"></div>'+
+      '<div class="list-row"><span class="lr-label">Accepted Quantity</span><span class="lr-value">'+(b.acceptedQty||b.quantity)+' qtl</span></div>'+
+      '<div class="list-row"><span class="lr-label">Rate</span><span class="lr-value">'+fmtINR(b.rate||2480)+' / qtl</span></div>'+
+      '<div class="list-row"><span class="lr-label">Transaction ID</span><span class="lr-value" style="font-family:var(--font-mono);">'+(b.txnId||'Pending')+'</span></div>';
+    wrap.appendChild(card);
+
+    // Payment timeline: Processing -> Completed
+    const stages = ['Processing','Completed'];
+    const curIdx = b.paymentStatus==='Completed' ? 1 : 0;
+    const tlCard = el('<div class="card" style="margin-top:10px;"></div>');
+    tlCard.appendChild(el('<div class="section-label">Payment Timeline</div>'));
+    const tl = el('<div class="timeline"></div>');
+    stages.forEach((s,i)=>{
+      const item = el('<div class="tl-item"></div>');
+      const markerCol = el('<div class="tl-marker-col"></div>');
+      const dot = el('<div class="tl-dot '+(i<curIdx?'done':i===curIdx?'active':'todo')+'">'+(i<curIdx?'✓':(i+1))+'</div>');
+      markerCol.appendChild(dot);
+      if(i<stages.length-1){ const line = el('<div class="tl-line '+(i<curIdx?'done':'')+'"></div>'); markerCol.appendChild(line); }
+      item.appendChild(markerCol);
+      item.appendChild(el('<div class="tl-content"><h5>Payment '+s+'</h5></div>'));
+      tl.appendChild(item);
+    });
+    tlCard.appendChild(tl);
+    wrap.appendChild(tlCard);
+
+    if(b.paymentStatus==='Processing'){
+      const sim = el('<div class="card" style="margin-top:12px;background:var(--primary-light);border-color:var(--primary);"></div>');
+      sim.appendChild(el('<p style="font-size:12px;color:var(--primary-dark);margin-bottom:8px;"><b>Demo control:</b> simulate bank settlement.</p>'));
+      const btn = el('<button class="btn btn-primary btn-block btn-sm">Simulate Payment Completion</button>');
+      btn.onclick = ()=>{
+        b.paymentStatus='Completed'; b.txnId = 'TXN-'+(770000+Math.floor(Math.random()*9999));
+        f.notifications.unshift({id:Date.now(),title:'Payment Completed',body:fmtINR(b.amount)+' credited for token '+b.token+'.',time:'Just now',read:false,icon:'💰'});
+        render(); showToast('Payment completed','💰');
+      };
+      sim.appendChild(btn);
+      wrap.appendChild(sim);
+    }
+  } else if(!b) {
+    wrap.appendChild(el('<div class="card" style="margin-top:14px;"><div class="empty-state"><div class="es-ic">💳</div><h4>No active payment</h4><p>Book a slot and complete procurement to see payment tracking here.</p></div></div>'));
+  }
+
+  wrap.appendChild(el('<div class="section-label" style="margin-top:16px;">All Transactions</div>'));
+  if(!f.bookings.length){
+    wrap.appendChild(el('<p style="font-size:12.5px;color:var(--text-faint);">No past transactions yet.</p>'));
+  }
+  f.bookings.forEach(hb=>{
+    const row = el('<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;"></div>');
+    row.innerHTML =
+      '<div><b style="font-size:13px;">'+CROP_ICONS[hb.crop]+' '+hb.crop+' · '+(hb.amount?fmtINR(hb.amount):'—')+'</b>'+
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">'+hb.date+' · '+hb.token+'</div></div>';
+    const right = el('<div style="display:flex;align-items:center;gap:8px;"></div>');
+    right.appendChild(el('<span class="badge badge-'+(hb.paymentStatus==='Completed'?'success':'warning')+'">'+hb.paymentStatus+'</span>'));
+    const viewBtn = el('<button class="btn btn-outline btn-sm">View</button>');
+    viewBtn.onclick = ()=>showTransactionModal(hb);
+    right.appendChild(viewBtn);
+    row.appendChild(right);
+    wrap.appendChild(row);
+  });
+
+  return wrap;
+}
+
+/* ---- Screen: History ---- */
+function screenHistory(){
+  const f = state.farmer;
+  if(!f.historyTab) f.historyTab = 'procurement';
+  const wrap = el('<div></div>');
+
+  const toggle = el('<div style="display:flex;gap:6px;margin-bottom:14px;"></div>');
+  const procBtn = el('<button class="btn btn-sm" style="flex:1;">🌾 Procurement</button>');
+  const payBtn = el('<button class="btn btn-sm" style="flex:1;">💳 Payments</button>');
+  procBtn.className = 'btn btn-sm '+(f.historyTab==='procurement'?'btn-primary':'btn-outline');
+  payBtn.className = 'btn btn-sm '+(f.historyTab==='payment'?'btn-primary':'btn-outline');
+  procBtn.onclick = ()=>{ f.historyTab='procurement'; render(); };
+  payBtn.onclick = ()=>{ f.historyTab='payment'; render(); };
+  toggle.appendChild(procBtn); toggle.appendChild(payBtn);
+  wrap.appendChild(toggle);
+
+  const all = f.bookings.slice();
+  if(!all.length){
+    wrap.appendChild(el('<div class="empty-state"><div class="es-ic">🧾</div><h4>No history yet</h4><p>Completed procurements and payments will appear here.</p></div>'));
+    return wrap;
+  }
+
+  if(f.historyTab==='procurement'){
+    all.forEach(b=>{
+      const c = findCentre(b.centreId);
+      const card = el('<div class="card"></div>');
+      card.innerHTML =
+        '<div style="display:flex;justify-content:space-between;">'+
+          '<h4 style="font-size:14px;">'+CROP_ICONS[b.crop]+' '+b.crop+' · '+b.quantity+' qtl</h4>'+
+          '<span class="badge badge-'+(b.status==='Completed'?'success':'info')+'">'+(b.status||'Completed')+'</span>'+
+        '</div>'+
+        '<p style="font-size:12px;color:var(--text-muted);margin-top:3px;">'+(c?c.name.split('—')[1].trim():b.centreName)+' · '+b.date+'</p>'+
+        '<div class="hairline"></div>'+
+        '<div class="list-row"><span class="lr-label">Token</span><span class="lr-value" style="font-family:var(--font-mono);">'+b.token+'</span></div>'+
+        '<div class="list-row"><span class="lr-label">Accepted Quantity</span><span class="lr-value">'+(b.acceptedQty!=null?b.acceptedQty+' qtl':'—')+'</span></div>'+
+        '<div class="list-row"><span class="lr-label">Quality Result</span><span class="lr-value">'+(b.inspection||'—')+'</span></div>';
+      const viewBtn = el('<button class="btn btn-outline btn-sm btn-block" style="margin-top:10px;">View Complete Details</button>');
+      viewBtn.onclick = ()=>showTransactionModal(b);
+      card.appendChild(viewBtn);
+      wrap.appendChild(card);
+    });
+  } else {
+    all.forEach(b=>{
+      const card = el('<div class="card"></div>');
+      card.innerHTML =
+        '<div style="display:flex;justify-content:space-between;">'+
+          '<h4 style="font-size:14px;">'+(b.amount?fmtINR(b.amount):'—')+'</h4>'+
+          '<span class="badge badge-'+(b.paymentStatus==='Completed'?'success':'warning')+'">'+b.paymentStatus+'</span>'+
+        '</div>'+
+        '<p style="font-size:12px;color:var(--text-muted);margin-top:3px;">'+b.date+' · Token '+b.token+'</p>'+
+        '<div class="hairline"></div>'+
+        '<div class="list-row"><span class="lr-label">Transaction ID</span><span class="lr-value" style="font-family:var(--font-mono);font-size:11.5px;">'+(b.txnId||'—')+'</span></div>';
+      const viewBtn = el('<button class="btn btn-outline btn-sm btn-block" style="margin-top:10px;">View Complete Details</button>');
+      viewBtn.onclick = ()=>showTransactionModal(b);
+      card.appendChild(viewBtn);
+      wrap.appendChild(card);
+    });
+  }
+  return wrap;
+}
+
+/* ---- Screen: Profile ---- */
+function screenProfile(){
+  const f = state.farmer;
+  const wrap = el('<div></div>');
+  wrap.appendChild(el(
+    '<div class="card" style="text-align:center;">'+
+    '<div style="width:56px;height:56px;border-radius:50%;background:var(--primary-light);color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;margin:0 auto 10px;">'+f.profile.name.charAt(0)+'</div>'+
+    '<h3 style="font-size:16px;">'+f.profile.name+'</h3>'+
+    '<p style="font-size:12.5px;color:var(--text-muted);">'+f.profile.farmerId+' · '+f.profile.village+', '+f.profile.district+'</p>'+
+    '</div>'
+  ));
+
+  if(!f.editingProfile){
+    const infoCard = el('<div class="card" style="margin-top:12px;"></div>');
+    infoCard.innerHTML =
+      '<div class="list-row"><span class="lr-label">Mobile</span><span class="lr-value">+91 '+f.profile.mobile+'</span></div>'+
+      '<div class="list-row"><span class="lr-label">Village</span><span class="lr-value">'+f.profile.village+'</span></div>'+
+      '<div class="list-row"><span class="lr-label">District</span><span class="lr-value">'+f.profile.district+'</span></div>';
+    const editBtn = el('<button class="btn btn-outline btn-block btn-sm" style="margin-top:10px;">✏️ Edit Profile</button>');
+    editBtn.onclick = ()=>{ f.editingProfile = true; render(); };
+    infoCard.appendChild(editBtn);
+    wrap.appendChild(infoCard);
+  } else {
+    const editCard = el('<div class="card" style="margin-top:12px;"></div>');
+    editCard.appendChild(el('<div class="section-label">Edit Profile</div>'));
+    editCard.appendChild(el('<div class="field"><label>Full Name</label><input class="input" id="editName" value="'+f.profile.name+'"/></div>'));
+    editCard.appendChild(el('<div class="field"><label>Mobile Number</label><input class="input" id="editMobile" value="'+f.profile.mobile+'" maxlength="10"/></div>'));
+    editCard.appendChild(el('<div class="field"><label>Village</label><input class="input" id="editVillage" value="'+f.profile.village+'"/></div>'));
+    editCard.appendChild(el('<div class="field"><label>District</label><input class="input" id="editDistrict" value="'+f.profile.district+'"/></div>'));
+    const btnRow = el('<div style="display:flex;gap:10px;"></div>');
+    const saveBtn = el('<button class="btn btn-primary btn-block">Save Changes</button>');
+    saveBtn.onclick = ()=>{
+      f.profile.name = document.getElementById('editName').value.trim() || f.profile.name;
+      f.profile.mobile = document.getElementById('editMobile').value.trim() || f.profile.mobile;
+      f.profile.village = document.getElementById('editVillage').value.trim() || f.profile.village;
+      f.profile.district = document.getElementById('editDistrict').value.trim() || f.profile.district;
+      f.editingProfile = false; render(); showToast('Profile updated','✅');
+    };
+    const cancelBtn = el('<button class="btn btn-outline btn-block">Cancel</button>');
+    cancelBtn.onclick = ()=>{ f.editingProfile=false; render(); };
+    btnRow.appendChild(cancelBtn); btnRow.appendChild(saveBtn);
+    editCard.appendChild(btnRow);
+    wrap.appendChild(editCard);
+  }
+
+  const menuCard = el('<div class="card" style="margin-top:12px;padding:6px 4px;"></div>');
+  [['history','🧾','History'],['help','❓','Help & Support']].forEach(([scr,ic,label])=>{
+    const row = el('<div class="list-row" style="padding:11px 12px;cursor:pointer;"><span class="lr-label" style="color:var(--text);font-weight:600;">'+ic+'  '+label+'</span><span class="lr-value" style="color:var(--text-faint);">›</span></div>');
+    row.onclick = ()=>{ f.screen=scr; render(); };
+    menuCard.appendChild(row);
+  });
+  wrap.appendChild(menuCard);
+
+  const langCard = el('<div class="card" style="margin-top:12px;"></div>');
+  langCard.appendChild(el('<div class="section-label">Language / భాష / भाषा</div>'));
+  const row = el('<div class="lang-pill-row"></div>');
+  [['en','English'],['te','తెలుగు'],['hi','हिन्दी']].forEach(([code,label])=>{
+    const p = el('<div class="lang-pill">'+label+'</div>');
+    if(state.lang===code) p.classList.add('selected');
+    p.style.cursor='pointer';
+    p.onclick=()=>{ state.lang=code; f.profile.language=code; render(); };
+    row.appendChild(p);
+  });
+  langCard.appendChild(row);
+  wrap.appendChild(langCard);
+
+  const connCard = el('<div class="card" style="margin-top:12px;display:flex;align-items:center;gap:10px;"></div>');
+  connCard.innerHTML = '<span style="font-size:16px;">📶</span><div><b style="font-size:12.5px;">Low-connectivity mode</b><p style="font-size:11px;color:var(--text-muted);">Last booking & token are saved on device and shown even when offline.</p></div>';
+  wrap.appendChild(connCard);
+
+  const logout = el('<button class="btn btn-danger-outline btn-block" style="margin-top:14px;">Log Out</button>');
+  logout.onclick = ()=>{ state.farmer = initState().farmer; render(); };
+  wrap.appendChild(logout);
+  return wrap;
+}
+
+/* ---- Screen: Help & Support ---- */
+function screenHelp(){
+  const wrap = el('<div></div>');
+
+  wrap.appendChild(el('<div class="section-label">Frequently Asked Questions</div>'));
+  const faqs = [
+    ['How do I book a procurement slot?', 'Go to Find Centre, choose a centre that accepts your crop, then tap Book Slot and follow the 4 steps: crop & quantity, centre, date & time, and review.'],
+    ['How is my waiting time calculated?', 'Waiting time = number of farmers ahead of you × average processing time ÷ active counters at that centre. It updates live as the queue moves.'],
+    ['What do I show at the centre gate?', 'Show the QR code from your My Appointment or QR Check-in Pass screen. The officer scans it to check you in.'],
+    ['How do I track my payment?', 'Open the Payments tab to see your total procurement amount, amount paid, pending amount, and the live Processing → Completed timeline for your latest sale.'],
+    ['Can I cancel or reschedule my booking?', 'Yes. Open My Appointment and use Cancel Booking or Reschedule. Rescheduling keeps your crop and quantity but lets you pick a new date and slot.'],
+  ];
+  const faqCard = el('<div class="card"></div>');
+  faqs.forEach(([q,ans],i)=>{
+    const item = el('<div style="'+(i>0?'border-top:1px solid var(--border);':'')+'padding:11px 0;"></div>');
+    const qRow = el('<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;"><b style="font-size:13px;">'+q+'</b><span style="color:var(--text-faint);font-size:16px;">＋</span></div>');
+    const ansEl = el('<p style="font-size:12.5px;color:var(--text-muted);margin-top:8px;display:none;">'+ans+'</p>');
+    qRow.onclick = ()=>{ ansEl.style.display = ansEl.style.display==='none' ? 'block' : 'none'; };
+    item.appendChild(qRow); item.appendChild(ansEl);
+    faqCard.appendChild(item);
+  });
+  wrap.appendChild(faqCard);
+
+  wrap.appendChild(el('<div class="section-label" style="margin-top:16px;">How-to Guides</div>'));
+  const guideCard = el('<div class="card"></div>');
+  [
+    ['📍','Booking a slot', 'Find Centre → pick a centre → Book Slot → crop, quantity, date & time → confirm.'],
+    ['⏱','Tracking your queue', 'Open the Queue tab any time after booking to see farmers ahead and estimated wait.'],
+    ['💳','Checking payment status', 'Open Payments to see totals and the live status of your latest sale.'],
+  ].forEach(([ic,title,body],i)=>{
+    guideCard.appendChild(el('<div style="display:flex;gap:10px;'+(i>0?'margin-top:12px;':'')+'"><div style="font-size:18px;">'+ic+'</div><div><b style="font-size:13px;">'+title+'</b><p style="font-size:12px;color:var(--text-muted);margin-top:2px;">'+body+'</p></div></div>'));
+  });
+  wrap.appendChild(guideCard);
+
+  wrap.appendChild(el('<div class="section-label" style="margin-top:16px;">Contact Procurement Centre Support</div>'));
+  const contactCard = el('<div class="card"></div>');
+  contactCard.appendChild(el('<div class="list-row"><span class="lr-label">Helpline</span><span class="lr-value" style="font-family:var(--font-mono);">1800-425-3336</span></div>'));
+  contactCard.appendChild(el('<div class="list-row"><span class="lr-label">Support Hours</span><span class="lr-value">6:00 AM – 8:00 PM</span></div>'));
+  const contactRow = el('<div style="display:flex;gap:10px;margin-top:10px;"></div>');
+  const callBtn = el('<button class="btn btn-primary btn-block btn-sm">📞 Call Support</button>');
+  callBtn.onclick = ()=>showToast('Dialing support helpline (prototype)','📞');
+  const emailBtn = el('<button class="btn btn-outline btn-block btn-sm">✉️ Email Support</button>');
+  emailBtn.onclick = ()=>showToast('Opening support email (prototype)','✉️');
+  contactRow.appendChild(callBtn); contactRow.appendChild(emailBtn);
+  contactCard.appendChild(contactRow);
+  wrap.appendChild(contactCard);
+
+  return wrap;
+}
+
+/* =========================================================
+   OFFICER APP
+   ========================================================= */
+function renderOfficerApp(){
+  const o = state.officer;
+  if(!o.loggedIn){
+    const shell = el('<div class="desktop-shell centered"></div>');
+    shell.appendChild(officerLoginCard());
+    return shell;
+  }
+  const shell = el('<div class="desktop-shell"></div>');
+  shell.appendChild(officerSidebar());
+  const main = el('<div class="d-main"></div>');
+  main.appendChild(officerTopbar());
+  const content = el('<div class="d-content"></div>');
+  const map = {
+    dashboard: officerScreenDashboard, queue: officerScreenQueue,
+    verification: officerScreenVerification, procurement: officerScreenProcurement
+  };
+  content.appendChild((map[o.screen]||officerScreenDashboard)());
+  main.appendChild(content);
+  shell.appendChild(main);
+  return shell;
+}
+
+function officerLoginCard(){
+  const o = state.officer;
+  const wrap = el('<div style="max-width:380px;width:100%;padding:44px 20px;text-align:center;"></div>');
+  wrap.appendChild(el('<div style="width:52px;height:52px;border-radius:14px;background:var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:24px;color:#fff;">🧑‍💼</div>'));
+  wrap.appendChild(el('<h2 style="font-size:19px;">Procurement Officer Login</h2>'));
+  wrap.appendChild(el('<p style="font-size:12.5px;color:var(--text-muted);margin:6px 0 20px;">Demo login — select your assigned centre to continue.</p>'));
+  const card = el('<div class="card" style="text-align:left;"></div>');
+  card.appendChild(el('<div class="field"><label>Officer Name</label><input class="input" id="offName" value="'+o.name+'"/></div>'));
+  const sel = el('<div class="field"><label>Assigned Centre</label></div>');
+  const selectEl = el('<select class="select" id="offCentre"></select>');
+  state.centres.forEach(c=>{ const opt=el('<option value="'+c.id+'">'+c.name+'</option>'); if(c.id===o.centreId) opt.selected=true; selectEl.appendChild(opt); });
+  sel.appendChild(selectEl);
+  card.appendChild(sel);
+  const btn = el('<button class="btn btn-primary btn-block">Log In</button>');
+  btn.onclick = ()=>{
+    o.name = document.getElementById('offName').value || o.name;
+    o.centreId = document.getElementById('offCentre').value;
+    o.loggedIn = true; o.screen='dashboard'; render();
+  };
+  card.appendChild(btn);
+  wrap.appendChild(card);
+  return wrap;
+}
+
+function officerSidebar(){
+  const o = state.officer;
+  const c = findCentre(o.centreId);
+  const bar = el('<div class="d-sidebar"></div>');
+  bar.appendChild(el('<div class="ds-brand"><div class="ds-brand-mark">FS</div><div><div class="ds-brand-name">FarmSync</div><div class="ds-brand-sub">OFFICER CONSOLE</div></div></div>'));
+  const nav = el('<div class="ds-nav"></div>');
+  [['dashboard','📊','Dashboard'],['queue','⏱','Live Queue'],['verification','🪪','Farmer Verification'],['procurement','⚖️','Procurement Entry']].forEach(([key,ic,label])=>{
+    const b = el('<button><span class="nav-ic">'+ic+'</span>'+label+'</button>');
+    if(o.screen===key) b.classList.add('active');
+    b.onclick=()=>{ o.screen=key; if(key!=='verification'&&key!=='procurement') o.selectedToken=null; render(); };
+    nav.appendChild(b);
+  });
+  bar.appendChild(nav);
+  bar.appendChild(el('<div class="ds-footer"><div class="df-name">'+o.name+'</div><div class="df-role">'+c.name.split('—')[1].trim()+'</div></div>'));
+  const logoutWrap = bar.querySelector('.ds-footer');
+  const logoutBtn = el('<button>Log Out</button>');
+  logoutBtn.onclick = ()=>{ state.officer = initState().officer; render(); };
+  logoutWrap.appendChild(logoutBtn);
+  return bar;
+}
+
+function officerTopbar(){
+  const o = state.officer;
+  const c = findCentre(o.centreId);
+  const titles = {dashboard:'Centre Dashboard', queue:'Live Queue Management', verification:'Farmer Verification', procurement:'Procurement Entry'};
+  const bar = el('<div class="d-topbar"></div>');
+  bar.appendChild(el('<div><h2>'+titles[o.screen]+'</h2><div class="d-sub">'+c.name+' · '+new Date().toDateString()+'</div></div>'));
+  bar.appendChild(el('<span class="centre-load-badge load-'+centreLoad(c)+'">Centre Load: '+centreLoad(c)+'</span>'));
+  return bar;
+}
+
+/* ---- Officer: Dashboard ---- */
+function officerScreenDashboard(){
+  const o = state.officer;
+  const c = findCentre(o.centreId);
+  const q = state.queues[o.centreId];
+  const wrap = el('<div></div>');
+
+  const bookedTotal = q.length;
+  const arrived = q.filter(x=>x.status==='Arrived'||x.status==='Processing').length;
+  const waiting = q.filter(x=>x.status==='Booked'||x.status==='Arrived').length;
+  const completed = q.filter(x=>x.status==='Completed').length + (state.completedToday[o.centreId]||0);
+
+  const stats = el('<div class="stat-grid"></div>');
+  [
+    ["Today's Bookings", bookedTotal, ''],
+    ['Arrived', arrived, 'checked in'],
+    ['Waiting', waiting, 'in queue'],
+    ['Completed', completed, 'today'],
+    ['Avg Waiting Time', '~'+computeWait(o.centreId).mins+' min', ''],
+    ['Avg Processing Time', c.avgProcessingMin+' min', 'per farmer'],
+    ['Active Counters', c.activeCounters+' / '+c.counters, ''],
+  ].forEach(([label,val,sub])=>{
+    stats.appendChild(el('<div class="stat-card"><div class="stat-label">'+label+'</div><div class="stat-value">'+val+'</div>'+(sub?'<div class="stat-sub">'+sub+'</div>':'')+'</div>'));
+  });
+  wrap.appendChild(stats);
+
+  const row = el('<div class="two-col" style="margin-top:20px;"></div>');
+  const left = el('<div class="card"></div>');
+  left.appendChild(el('<div class="section-label">Queue Snapshot</div>'));
+  const table = buildQueueTable(o.centreId, {compact:true, limit:6});
+  left.appendChild(table);
+  const goQueue = el('<button class="btn btn-outline btn-sm" style="margin-top:12px;">Open Full Queue →</button>');
+  goQueue.onclick=()=>{ o.screen='queue'; render(); };
+  left.appendChild(goQueue);
+  row.appendChild(left);
+
+  const right = el('<div class="card"></div>');
+  right.appendChild(el('<div class="section-label">Pending Payments</div>'));
+  right.appendChild(el('<div class="stat-value" style="font-size:26px;color:var(--warning);">'+(state.pendingPayments[o.centreId]||0)+'</div>'));
+  right.appendChild(el('<p style="font-size:12px;color:var(--text-muted);margin-top:4px;">Farmers awaiting payment settlement</p>'));
+  right.appendChild(el('<div class="hairline"></div>'));
+  right.appendChild(el('<div class="section-label">Centre Info</div>'));
+  right.appendChild(el('<div class="list-row"><span class="lr-label">Hours</span><span class="lr-value">'+c.hours+'</span></div>'));
+  right.appendChild(el('<div class="list-row"><span class="lr-label">Daily Capacity</span><span class="lr-value">'+c.dailyCapacity+'</span></div>'));
+  right.appendChild(el('<div class="list-row"><span class="lr-label">Booked Today</span><span class="lr-value">'+c.bookedToday+'</span></div>'));
+  row.appendChild(right);
+
+  wrap.appendChild(row);
+  return wrap;
+}
+
+/* ---- Officer: Live Queue Management ---- */
+function officerScreenQueue(){
+  const o = state.officer;
+  const wrap = el('<div></div>');
+  const controls = el('<div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;"></div>');
+  controls.appendChild(el('<p style="font-size:12.5px;color:var(--text-muted);max-width:520px;">Manage the live queue: call the next farmer, check them in, start processing, complete, or skip a token. Changes reflect instantly on the farmer\'s app.</p>'));
+  const callNextBtn = el('<button class="btn btn-accent btn-sm">📢 Call Next Token</button>');
+  callNextBtn.onclick = ()=>{ callNextToken(o.centreId); render(); };
+  controls.appendChild(callNextBtn);
+  wrap.appendChild(controls);
+
+  wrap.appendChild(el('<div class="card"></div>')).appendChild(buildQueueTable(o.centreId, {compact:false}));
+  return wrap;
+}
+
+function callNextToken(centreId){
+  const q = state.queues[centreId];
+  const processing = q.find(x=>x.status==='Processing');
+  if(processing){ showToast('A token is already being processed','⚠️'); return; }
+  const nextArrived = q.find(x=>x.status==='Arrived');
+  if(nextArrived){ nextArrived.status='Processing'; showToast('Calling token '+nextArrived.token,'📢'); syncFarmerFromQueue(centreId); return; }
+  showToast('No arrived farmers waiting to be called','ℹ️');
+}
+
+function syncFarmerFromQueue(centreId){
+  const f = state.farmer;
+  if(!f.activeBooking || f.activeBooking.centreId!==centreId) return;
+  const mine = state.queues[centreId].find(x=>x.token===f.activeBooking.token);
+  if(!mine) return;
+  const map = {Booked:'Booked', Arrived:'Arrived', Processing:'Verification', Completed:'Completed', Skipped:'Skipped'};
+  if(map[mine.status]) f.activeBooking.status = map[mine.status];
+}
+
+function buildQueueTable(centreId, opts){
+  opts = opts || {};
+  const o = state.officer;
+  let q = state.queues[centreId].slice();
+  const order = {Processing:0, Arrived:1, Booked:2, Completed:3, Skipped:4};
+  q.sort((a,b)=> (order[a.status]??9)-(order[b.status]??9) );
+  if(opts.limit) q = q.slice(0, opts.limit);
+
+  const table = el('<table class="data-table"></table>');
+  const thead = el('<thead><tr><th>Token</th><th>Farmer</th><th>Crop</th><th>Qty</th><th>Status</th>'+(opts.compact?'':'<th>Actions</th>')+'</tr></thead>');
+  table.appendChild(thead);
+  const tbody = el('<tbody></tbody>');
+  if(!q.length){ tbody.appendChild(el('<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:20px;">No tokens in queue</td></tr>')); }
+  q.forEach(row=>{
+    const tr = el('<tr></tr>');
+    if(row.status==='Processing') tr.classList.add('current-row');
+    tr.innerHTML =
+      '<td style="font-family:var(--font-mono);font-weight:700;">'+row.token+'</td>'+
+      '<td>'+row.farmer+'<div style="font-size:10.5px;color:var(--text-faint);">'+row.farmerId+'</div></td>'+
+      '<td>'+CROP_ICONS[row.crop]+' '+row.crop+'</td>'+
+      '<td>'+row.quantity+' qtl</td>'+
+      '<td><span class="badge badge-'+statusBadgeType(row.status)+'">'+row.status+'</span></td>';
+    if(!opts.compact){
+      const actionsTd = el('<td></td>');
+      const actions = el('<div class="table-actions"></div>');
+      if(row.status==='Booked'){
+        const b = el('<button class="btn btn-outline btn-sm">Check In</button>');
+        b.onclick=()=>{ row.status='Arrived'; syncFarmerFromQueue(centreId); render(); showToast(row.token+' checked in','✅'); };
+        actions.appendChild(b);
+      }
+      if(row.status==='Arrived'){
+        const b = el('<button class="btn btn-primary btn-sm">Start Processing</button>');
+        b.onclick=()=>{
+          const already = state.queues[centreId].find(x=>x.status==='Processing');
+          if(already){ showToast('Finish current token first','⚠️'); return; }
+          row.status='Processing'; syncFarmerFromQueue(centreId);
+          o.selectedToken = row.token; o.screen='verification'; render();
+        };
+        actions.appendChild(b);
+        const skip = el('<button class="btn btn-ghost btn-sm" style="border:1px solid var(--border);">Skip</button>');
+        skip.onclick=()=>{ row.status='Skipped'; syncFarmerFromQueue(centreId); render(); showToast(row.token+' skipped','⏭️'); };
+        actions.appendChild(skip);
+      }
+      if(row.status==='Processing'){
+        const b = el('<button class="btn btn-accent btn-sm">Complete →</button>');
+        b.onclick=()=>{ o.selectedToken=row.token; o.screen='procurement'; render(); };
+        actions.appendChild(b);
+      }
+      actionsTd.appendChild(actions);
+      tr.appendChild(actionsTd);
+    }
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  return table;
+}
+
+/* ---- Officer: Farmer Verification ---- */
+function officerScreenVerification(){
+  const o = state.officer;
+  const q = state.queues[o.centreId];
+  const wrap = el('<div></div>');
+  const candidates = q.filter(x=>x.status==='Processing' || x.status==='Arrived');
+  const selected = candidates.find(x=>x.token===o.selectedToken) || candidates[0];
+
+  if(!selected){
+    wrap.appendChild(el('<div class="empty-state"><div class="es-ic">🪪</div><h4>No farmer waiting for verification</h4><p>Check in a farmer from the Live Queue tab first.</p></div>'));
+    return wrap;
+  }
+
+  const row = el('<div class="two-col"></div>');
+  const left = el('<div class="card"></div>');
+  left.innerHTML =
+    '<div class="section-label">Farmer Details</div>'+
+    '<div class="list-row"><span class="lr-label">Name</span><span class="lr-value">'+selected.farmer+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Farmer ID</span><span class="lr-value" style="font-family:var(--font-mono);">'+selected.farmerId+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Token</span><span class="lr-value" style="font-family:var(--font-mono);">'+selected.token+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Crop</span><span class="lr-value">'+CROP_ICONS[selected.crop]+' '+selected.crop+'</span></div>'+
+    '<div class="list-row"><span class="lr-label">Expected Quantity</span><span class="lr-value">'+selected.quantity+' qtl</span></div>'+
+    '<div class="list-row"><span class="lr-label">Status</span><span class="lr-value badge badge-'+statusBadgeType(selected.status)+'">'+selected.status+'</span></div>';
+  row.appendChild(left);
+
+  const right = el('<div class="card" style="text-align:center;"></div>');
+  right.appendChild(el('<div class="section-label">QR Verification</div>'));
+  right.appendChild(el('<div class="qr-box" style="margin-bottom:12px;">'+qrPatternSVG(selected.token+selected.farmerId,140)+'</div>'));
+  const scanBtn = el('<button class="btn btn-outline btn-block btn-sm">🔍 Simulate Scan</button>');
+  scanBtn.onclick=()=>{ showToast('QR verified for '+selected.token,'✅'); };
+  right.appendChild(scanBtn);
+  const actions = el('<div style="display:flex;gap:8px;margin-top:12px;"></div>');
+  const verifyBtn = el('<button class="btn btn-primary btn-block">Verify</button>');
+  verifyBtn.onclick = ()=>{
+    if(selected.status==='Arrived'){
+      const already = state.queues[o.centreId].find(x=>x.status==='Processing');
+      if(already){ showToast('Finish current token first','⚠️'); return; }
+      selected.status='Processing'; syncFarmerFromQueue(o.centreId);
+    }
+    o.screen='procurement'; render();
+  };
+  const rejectBtn = el('<button class="btn btn-danger-outline btn-block">Reject</button>');
+  rejectBtn.onclick = ()=>{ selected.status='Skipped'; syncFarmerFromQueue(o.centreId); o.screen='queue'; render(); showToast('Farmer verification rejected','⚠️'); };
+  actions.appendChild(verifyBtn); actions.appendChild(rejectBtn);
+  right.appendChild(actions);
+  const checkinBtn = el('<button class="btn btn-ghost btn-block btn-sm" style="border:1px solid var(--border);margin-top:8px;">Mark as Checked In</button>');
+  checkinBtn.onclick = ()=>{ selected.status='Arrived'; syncFarmerFromQueue(o.centreId); render(); showToast('Checked in','✅'); };
+  right.appendChild(checkinBtn);
+  row.appendChild(right);
+
+  wrap.appendChild(row);
+  return wrap;
+}
+
+/* ---- Officer: Procurement Entry ---- */
+function officerScreenProcurement(){
+  const o = state.officer;
+  const q = state.queues[o.centreId];
+  const selected = q.find(x=>x.token===o.selectedToken && x.status==='Processing') || q.find(x=>x.status==='Processing');
+
+  const wrap = el('<div></div>');
+  if(!selected){
+    wrap.appendChild(el('<div class="empty-state"><div class="es-ic">⚖️</div><h4>No token currently in processing</h4><p>Start processing a farmer from the Live Queue tab.</p></div>'));
+    return wrap;
+  }
+
+  const card = el('<div class="card" style="max-width:560px;"></div>');
+  card.appendChild(el('<div class="section-label">Farmer: '+selected.farmer+' ('+selected.farmerId+') · Token '+selected.token+'</div>'));
+  const grid = el('<div class="grid-2"></div>');
+  grid.appendChild(el('<div class="field"><label>Expected Quantity</label><input class="input" value="'+selected.quantity+' quintals" disabled/></div>'));
+  grid.appendChild(el('<div class="field"><label>Actual Quantity (quintals)</label><input class="input" id="actualQty" type="number" step="0.1" value="'+(Math.round(selected.quantity*0.9*10)/10)+'"/></div>'));
+  card.appendChild(grid);
+
+  card.appendChild(el('<div class="field"><label>Quality / Inspection Result</label></div>'));
+  const chipRow = el('<div class="chip-row" style="margin-bottom:14px;"></div>');
+  let inspection = 'Accepted';
+  ['Accepted','Rejected','Needs Inspection'].forEach(opt=>{
+    const c = el('<div class="chip">'+opt+'</div>');
+    if(opt==='Accepted') c.classList.add('selected');
+    c.style.cursor='pointer';
+    c.onclick=()=>{ [...chipRow.children].forEach(x=>x.classList.remove('selected')); c.classList.add('selected'); inspection=opt; };
+    chipRow.appendChild(c);
+  });
+  card.appendChild(chipRow);
+
+  card.appendChild(el('<div class="field"><label>Remarks</label><textarea class="input" id="remarks" rows="2" placeholder="Optional remarks"></textarea></div>'));
+
+  const submitBtn = el('<button class="btn btn-accent btn-block">Complete Procurement</button>');
+  submitBtn.onclick = ()=>{
+    const actualQty = parseFloat(document.getElementById('actualQty').value) || selected.quantity;
+    selected.status='Completed';
+    state.completedToday[o.centreId] = (state.completedToday[o.centreId]||0)+1;
+    state.pendingPayments[o.centreId] = (state.pendingPayments[o.centreId]||0)+1;
+
+    const f = state.farmer;
+    if(f.activeBooking && f.activeBooking.token===selected.token){
+      const rate = {Paddy:2320, Wheat:2275, Maize:2090, Cotton:6620, Other:2000}[selected.crop]||2200;
+      f.activeBooking.status='Completed';
+      f.activeBooking.acceptedQty = actualQty;
+      f.activeBooking.rate = rate;
+      f.activeBooking.amount = Math.round(actualQty*rate);
+      f.activeBooking.paymentStatus='Processing';
+      f.activeBooking.inspection = inspection;
+      f.activeBooking.remarks = (document.getElementById('remarks').value||'').trim();
+      f.notifications.unshift({id:Date.now(),title:'Procurement Completed',body:'Accepted '+actualQty+' qtl of '+selected.crop+'. Payment processing started.',time:'Just now',read:false,icon:'✅'});
+    }
+    o.screen='queue'; o.selectedToken=null; render();
+    showToast('Procurement completed for '+selected.token,'✅');
+  };
+  card.appendChild(submitBtn);
+  wrap.appendChild(card);
+  return wrap;
+}
+
+/* =========================================================
+   ADMIN APP
+   ========================================================= */
+function renderAdminApp(){
+  const a = state.admin;
+  const shell = el('<div class="desktop-shell"></div>');
+  shell.appendChild(adminSidebar());
+  const main = el('<div class="d-main"></div>');
+  main.appendChild(adminTopbar());
+  const content = el('<div class="d-content"></div>');
+  const map = {
+    dashboard: adminScreenDashboard, centres: adminScreenCentres, slots: adminScreenSlots,
+    analytics: adminScreenAnalytics, load: adminScreenLoad,
+    users: adminScreenUsers, reports: adminScreenReports, settings: adminScreenSettings
+  };
+  content.appendChild((map[a.screen]||adminScreenDashboard)());
+  main.appendChild(content);
+  shell.appendChild(main);
+  return shell;
+}
+
+function adminSidebar(){
+  const a = state.admin;
+  const bar = el('<div class="d-sidebar"></div>');
+  bar.appendChild(el('<div class="ds-brand"><div class="ds-brand-mark">FS</div><div><div class="ds-brand-name">FarmSync</div><div class="ds-brand-sub">ADMIN CONSOLE</div></div></div>'));
+  const nav = el('<div class="ds-nav"></div>');
+  [['dashboard','📊','Dashboard'],['centres','🏢','Centre Management'],['slots','🕒','Slot Management'],['analytics','📈','Analytics'],['load','🚦','Centre Load'],['users','👥','User Management'],['reports','📄','Reports'],['settings','⚙️','Settings']].forEach(([key,ic,label])=>{
+    const b = el('<button><span class="nav-ic">'+ic+'</span>'+label+'</button>');
+    if(a.screen===key) b.classList.add('active');
+    b.onclick=()=>{ a.screen=key; render(); };
+    nav.appendChild(b);
+  });
+  bar.appendChild(nav);
+  bar.appendChild(el('<div class="ds-footer"><div class="df-name">Admin User</div><div class="df-role">State Procurement Dept.</div></div>'));
+  return bar;
+}
+function adminTopbar(){
+  const a = state.admin;
+  const titles = {dashboard:'Admin Dashboard', centres:'Centre Management', slots:'Slot & Capacity Management', analytics:'Analytics', load:'Centre Load Monitoring', users:'User Management', reports:'Reports', settings:'System Settings'};
+  const bar = el('<div class="d-topbar"></div>');
+  bar.appendChild(el('<div><h2>'+titles[a.screen]+'</h2><div class="d-sub">All procurement centres · '+new Date().toDateString()+'</div></div>'));
+  return bar;
+}
+
+/* ---- Admin: Dashboard ---- */
+function adminScreenDashboard(){
+  const wrap = el('<div></div>');
+  const totalCentres = state.centres.length;
+  const farmersToday = state.centres.reduce((s,c)=>s+c.bookedToday,0);
+  const bookings = Object.values(state.queues).reduce((s,q)=>s+q.length,0);
+  const completed = state.centres.reduce((s,c)=>s+(state.completedToday[c.id]||0),0);
+  const waiting = Object.values(state.queues).reduce((s,q)=>s+q.filter(x=>x.status==='Booked'||x.status==='Arrived').length,0);
+  const pendingPay = Object.values(state.pendingPayments).reduce((s,v)=>s+v,0);
+
+  const stats = el('<div class="stat-grid"></div>');
+  [['Total Centres',totalCentres,''],['Farmers Today',farmersToday,''],['Bookings',bookings,'active + completed'],
+   ['Completed Procurements',completed,'today'],['Waiting Farmers',waiting,'across all centres'],['Pending Payments',pendingPay,'']]
+   .forEach(([l,v,s])=>stats.appendChild(el('<div class="stat-card"><div class="stat-label">'+l+'</div><div class="stat-value">'+v+'</div>'+(s?'<div class="stat-sub">'+s+'</div>':'')+'</div>')));
+  wrap.appendChild(stats);
+
+  wrap.appendChild(el('<h3 style="font-size:15px;margin:22px 0 10px;">Centre Overview</h3>'));
+  const table = el('<table class="data-table"></table>');
+  table.appendChild(el('<thead><tr><th>Centre</th><th>Booked / Capacity</th><th>Queue</th><th>Avg Wait</th><th>Load</th></tr></thead>'));
+  const tbody = el('<tbody></tbody>');
+  state.centres.forEach(c=>{
+    const w = computeWait(c.id);
+    tbody.appendChild(el('<tr><td><b>'+c.name.split('—')[1].trim()+'</b><div style="font-size:11px;color:var(--text-faint);">'+c.id+'</div></td>'+
+      '<td>'+c.bookedToday+' / '+c.dailyCapacity+'</td>'+
+      '<td>'+w.ahead+' waiting</td>'+
+      '<td>~'+w.mins+' min</td>'+
+      '<td><span class="centre-load-badge load-'+centreLoad(c)+'">'+centreLoad(c)+'</span></td></tr>'));
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(el('<div class="card"></div>')).appendChild(table);
+  return wrap;
+}
+
+/* ---- Admin: Centre Management ---- */
+function adminScreenCentres(){
+  const wrap = el('<div></div>');
+  state.centres.forEach(c=>{
+    const card = el('<div class="card" style="margin-bottom:12px;"></div>');
+    card.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">'+
+      '<div><h4 style="font-size:14.5px;">'+c.name+'</h4><p style="font-size:12px;color:var(--text-muted);margin-top:2px;">'+c.address+'</p></div>'+
+      '<span class="tag">'+(c.bookingOpen?'Bookings Open':'Bookings Closed')+'</span></div>';
+    const grid = el('<div class="grid-3" style="margin-top:12px;"></div>');
+    grid.appendChild(el('<div class="field"><label>Working Hours</label><input class="input" value="'+c.hours+'"/></div>'));
+    grid.appendChild(el('<div class="field"><label>Daily Capacity</label><input class="input" type="number" value="'+c.dailyCapacity+'"/></div>'));
+    grid.appendChild(el('<div class="field"><label>Counter Count</label><input class="input" type="number" value="'+c.counters+'"/></div>'));
+    card.appendChild(grid);
+    const actions = el('<div style="display:flex;gap:10px;"></div>');
+    const saveBtn = el('<button class="btn btn-primary btn-sm">Save Changes</button>');
+    saveBtn.onclick=()=>{
+      const inputs = grid.querySelectorAll('input');
+      c.hours = inputs[0].value; c.dailyCapacity = parseInt(inputs[1].value)||c.dailyCapacity; c.counters = parseInt(inputs[2].value)||c.counters;
+      render(); showToast('Centre updated','✅');
+    };
+    const toggleBtn = el('<button class="btn btn-outline btn-sm">'+(c.bookingOpen?'Close Bookings':'Open Bookings')+'</button>');
+    toggleBtn.onclick=()=>{ c.bookingOpen=!c.bookingOpen; render(); showToast('Booking availability updated','🔁'); };
+    actions.appendChild(saveBtn); actions.appendChild(toggleBtn);
+    card.appendChild(actions);
+    wrap.appendChild(card);
+  });
+  const addBtn = el('<button class="btn btn-accent">+ Add Centre</button>');
+  addBtn.onclick=()=>{ showToast('Add Centre form would open here (prototype)','ℹ️'); };
+  wrap.appendChild(addBtn);
+  return wrap;
+}
+
+/* ---- Admin: Slot Management ---- */
+function adminScreenSlots(){
+  const wrap = el('<div></div>');
+  state.centres.forEach(c=>{
+    if(!c.slotConfig) c.slotConfig = {duration:60, maxPerSlot:12};
+    const card = el('<div class="card" style="margin-bottom:12px;"></div>');
+    card.appendChild(el('<h4 style="font-size:14.5px;margin-bottom:10px;">'+c.name.split('—')[1].trim()+'</h4>'));
+    const grid = el('<div class="grid-3"></div>');
+    grid.appendChild(el('<div class="field"><label>Working Hours</label><input class="input" value="'+c.hours+'"/></div>'));
+    grid.appendChild(el('<div class="field"><label>Slot Duration (min)</label><input class="input" type="number" value="'+c.slotConfig.duration+'"/></div>'));
+    grid.appendChild(el('<div class="field"><label>Max Farmers / Slot</label><input class="input" type="number" value="'+c.slotConfig.maxPerSlot+'"/></div>'));
+    card.appendChild(grid);
+    const grid2 = el('<div class="grid-3"></div>');
+    grid2.appendChild(el('<div class="field"><label>Number of Counters</label><input class="input" type="number" value="'+c.counters+'"/></div>'));
+    grid2.appendChild(el('<div class="field"><label>Active Counters Now</label><input class="input" type="number" value="'+c.activeCounters+'"/></div>'));
+    grid2.appendChild(el('<div class="field"><label>Avg Processing Time (min)</label><input class="input" type="number" value="'+c.avgProcessingMin+'"/></div>'));
+    card.appendChild(grid2);
+    const saveBtn = el('<button class="btn btn-primary btn-sm">Save Slot Configuration</button>');
+    saveBtn.onclick=()=>{
+      const i1=grid.querySelectorAll('input'), i2=grid2.querySelectorAll('input');
+      c.hours=i1[0].value; c.slotConfig.duration=parseInt(i1[1].value)||60; c.slotConfig.maxPerSlot=parseInt(i1[2].value)||12;
+      c.counters=parseInt(i2[0].value)||c.counters; c.activeCounters=Math.min(c.counters, parseInt(i2[1].value)||c.activeCounters); c.avgProcessingMin=parseInt(i2[2].value)||c.avgProcessingMin;
+      render(); showToast('Slot configuration saved','✅');
+    };
+    card.appendChild(saveBtn);
+    wrap.appendChild(card);
+  });
+  return wrap;
+}
+
+/* ---- Admin: Analytics ---- */
+function adminScreenAnalytics(){
+  const wrap = el('<div></div>');
+  const row = el('<div class="two-col"></div>');
+
+  const left = el('<div class="card"></div>');
+  left.appendChild(el('<div class="section-label">Daily Farmer Volume by Centre</div>'));
+  const bc = el('<div class="bar-chart"></div>');
+  const maxCap = Math.max(...state.centres.map(c=>c.dailyCapacity));
+  state.centres.forEach(c=>{
+    bc.appendChild(el('<div class="bar-row"><span class="bar-label">'+c.id+'</span><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(100*c.bookedToday/maxCap)+'%;"></div></div><span class="bar-value">'+c.bookedToday+'</span></div>'));
+  });
+  left.appendChild(bc);
+  row.appendChild(left);
+
+  const right = el('<div class="card"></div>');
+  right.appendChild(el('<div class="section-label">Completed vs Pending Procurement</div>'));
+  const totalCompleted = state.centres.reduce((s,c)=>s+(state.completedToday[c.id]||0),0);
+  const totalPending = Object.values(state.queues).reduce((s,q)=>s+q.filter(x=>x.status!=='Completed'&&x.status!=='Skipped').length,0);
+  const totalAll = totalCompleted+totalPending || 1;
+  right.appendChild(el(
+    '<div class="progress-track" style="height:22px;margin-bottom:8px;"><div class="progress-fill" style="width:'+Math.round(100*totalCompleted/totalAll)+'%;background:var(--success);"></div></div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);"><span>✅ Completed: '+totalCompleted+'</span><span>⏳ Pending: '+totalPending+'</span></div>'
+  ));
+  right.appendChild(el('<div class="hairline"></div>'));
+  right.appendChild(el('<div class="section-label">Payment Status</div>'));
+  const pendingPay = Object.values(state.pendingPayments).reduce((s,v)=>s+v,0);
+  right.appendChild(el('<div class="list-row"><span class="lr-label">Pending Payments</span><span class="lr-value">'+pendingPay+'</span></div>'));
+  right.appendChild(el('<div class="list-row"><span class="lr-label">Avg Processing Time</span><span class="lr-value">'+Math.round(state.centres.reduce((s,c)=>s+c.avgProcessingMin,0)/state.centres.length)+' min</span></div>'));
+  row.appendChild(right);
+  wrap.appendChild(row);
+
+  const wide = el('<div class="card" style="margin-top:16px;"></div>');
+  wide.appendChild(el('<div class="section-label">Centre Workload (Booked % of Capacity)</div>'));
+  const bc2 = el('<div class="bar-chart"></div>');
+  state.centres.forEach(c=>{
+    const pct = Math.round(100*c.bookedToday/c.dailyCapacity);
+    bc2.appendChild(el('<div class="bar-row"><span class="bar-label">'+c.name.split('—')[1].trim()+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+(pct>85?'var(--danger)':pct>55?'var(--accent)':'var(--success)')+';"></div></div><span class="bar-value">'+pct+'%</span></div>'));
+  });
+  wide.appendChild(bc2);
+  wrap.appendChild(wide);
+  return wrap;
+}
+
+/* ---- Admin: Centre Load Monitoring ---- */
+function adminScreenLoad(){
+  const wrap = el('<div class="grid-3"></div>');
+  state.centres.forEach(c=>{
+    const w = computeWait(c.id);
+    const load = centreLoad(c);
+    const card = el('<div class="card"></div>');
+    card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'+
+        '<h4 style="font-size:14px;">'+c.name.split('—')[1].trim()+'</h4>'+
+        '<span class="centre-load-badge load-'+load+'">'+(load==='low'?'🟢 Low':load==='medium'?'🟡 Medium':'🔴 High')+'</span>'+
+      '</div>'+
+      '<div class="hairline"></div>'+
+      '<div class="list-row"><span class="lr-label">Queue Size</span><span class="lr-value">'+w.ahead+'</span></div>'+
+      '<div class="list-row"><span class="lr-label">Daily Capacity</span><span class="lr-value">'+c.dailyCapacity+'</span></div>'+
+      '<div class="list-row"><span class="lr-label">Avg Waiting Time</span><span class="lr-value">~'+w.mins+' min</span></div>'+
+      '<div class="list-row"><span class="lr-label">Active Counters</span><span class="lr-value">'+c.activeCounters+' / '+c.counters+'</span></div>';
+    wrap.appendChild(card);
+  });
+  return wrap;
+}
+
+/* ---- Admin: User Management ---- */
+function adminScreenUsers(){
+  const wrap = el('<div></div>');
+
+  const farmers = state.users.filter(u=>u.role==='Farmer');
+  const officers = state.users.filter(u=>u.role==='Officer');
+  const stats = el('<div class="stat-grid" style="margin-bottom:16px;"></div>');
+  [['Registered Farmers', farmers.length, 'across 3 districts'],
+   ['Procurement Officers', officers.length, 'one per centre'],
+   ['Active Accounts', state.users.filter(u=>u.status==='Active').length, ''],
+   ['Blocked Accounts', state.users.filter(u=>u.status==='Blocked').length, '']
+  ].forEach(([label,val,sub])=>{
+    stats.appendChild(el('<div class="stat-card"><div class="stat-label">'+label+'</div><div class="stat-value">'+val+'</div>'+(sub?'<div class="stat-sub">'+sub+'</div>':'')+'</div>'));
+  });
+  wrap.appendChild(stats);
+
+  const card = el('<div class="card"></div>');
+  const head = el('<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;"></div>');
+  head.appendChild(el('<div class="section-label" style="margin:0;">All Users</div>'));
+  const search = el('<input class="input" placeholder="Search by name, ID or village" style="max-width:280px;"/>');
+  head.appendChild(search);
+  card.appendChild(head);
+
+  const tableHost = el('<div></div>');
+  function draw(filter){
+    tableHost.innerHTML = '';
+    const q = (filter||'').toLowerCase().trim();
+    const rows = state.users.filter(u=>!q || (u.name+u.id+u.village+u.district).toLowerCase().includes(q));
+    if(!rows.length){
+      tableHost.appendChild(el('<div class="empty-state"><div class="es-ic">🔍</div><h4>No users match that search</h4><p>Try a different name, Farmer ID or village.</p></div>'));
+      return;
+    }
+    const tbl = el('<table class="data-table"><thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Village</th><th>District</th><th>Mobile</th><th>Status</th><th>Action</th></tr></thead><tbody></tbody></table>');
+    const tb = tbl.querySelector('tbody');
+    rows.forEach(u=>{
+      const tr = el('<tr><td><span class="token-badge">'+u.id+'</span></td><td>'+u.name+'</td><td>'+u.role+'</td><td>'+u.village+'</td><td>'+u.district+'</td><td>'+u.mobile+'</td>'+
+        '<td><span class="badge badge-'+(u.status==='Active'?'success':'danger')+'">'+u.status+'</span></td><td></td></tr>');
+      const act = el('<button class="btn btn-outline btn-sm">'+(u.status==='Active'?'Block':'Unblock')+'</button>');
+      act.onclick = ()=>{
+        u.status = u.status==='Active' ? 'Blocked' : 'Active';
+        showToast(u.name+' is now '+u.status.toLowerCase(), u.status==='Active'?'✅':'⛔');
+        draw(search.value);
+      };
+      tr.lastElementChild.appendChild(act);
+      tb.appendChild(tr);
+    });
+    tableHost.appendChild(tbl);
+  }
+  search.oninput = ()=>draw(search.value);
+  draw('');
+  card.appendChild(tableHost);
+  wrap.appendChild(card);
+  return wrap;
+}
+
+/* ---- Admin: Reports ---- */
+function adminScreenReports(){
+  const wrap = el('<div></div>');
+  const today = new Date().toDateString();
+
+  const totalBooked = state.centres.reduce((s,c)=>s+c.bookedToday,0);
+  const totalCompleted = state.centres.reduce((s,c)=>s+(state.completedToday[c.id]||0),0);
+  const totalWaiting = Object.values(state.queues).reduce((s,q)=>s+q.filter(x=>x.status==='Booked'||x.status==='Arrived').length,0);
+  const totalPendingPay = Object.values(state.pendingPayments).reduce((s,v)=>s+v,0);
+
+  const card = el('<div class="card"></div>');
+  card.appendChild(el('<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">'+
+    '<div><h4 style="font-size:15px;">Daily Procurement Report</h4>'+
+    '<p style="font-size:12px;color:var(--text-muted);margin-top:3px;">All centres · '+today+'</p></div>'+
+    '<span class="tag">Auto-generated</span></div>'));
+
+  const tbl = el('<table class="data-table" style="margin-top:14px;"><thead><tr><th>Centre</th><th>Booked</th><th>Completed</th><th>Waiting</th><th>Capacity Used</th><th>Pending Payments</th><th>Load</th></tr></thead><tbody></tbody></table>');
+  const tb = tbl.querySelector('tbody');
+  state.centres.forEach(c=>{
+    const done = state.completedToday[c.id]||0;
+    const waiting = (state.queues[c.id]||[]).filter(x=>x.status==='Booked'||x.status==='Arrived').length;
+    const pct = Math.round(100*c.bookedToday/c.dailyCapacity);
+    const load = centreLoad(c);
+    tb.appendChild(el('<tr><td><b>'+c.name.split('—')[1].trim()+'</b></td><td>'+c.bookedToday+'</td><td>'+done+'</td><td>'+waiting+'</td>'+
+      '<td>'+pct+'% of '+c.dailyCapacity+'</td><td>'+(state.pendingPayments[c.id]||0)+'</td>'+
+      '<td><span class="centre-load-badge load-'+load+'">'+load+'</span></td></tr>'));
+  });
+  tb.appendChild(el('<tr style="background:var(--surface-2);font-weight:700;"><td>All centres</td><td>'+totalBooked+'</td><td>'+totalCompleted+'</td><td>'+totalWaiting+'</td><td>—</td><td>'+totalPendingPay+'</td><td>—</td></tr>'));
+  card.appendChild(tbl);
+
+  const actions = el('<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;"></div>');
+  const dl = el('<button class="btn btn-primary btn-sm">Download CSV</button>');
+  dl.onclick = ()=>{
+    const lines = [['Centre','Booked','Completed','Waiting','Capacity','Pending Payments','Load']];
+    state.centres.forEach(c=>lines.push([
+      c.name.split('—')[1].trim(), c.bookedToday, state.completedToday[c.id]||0,
+      (state.queues[c.id]||[]).filter(x=>x.status==='Booked'||x.status==='Arrived').length,
+      c.dailyCapacity, state.pendingPayments[c.id]||0, centreLoad(c)
+    ]));
+    const csv = lines.map(r=>r.join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = 'farmsync-daily-report.csv';
+    a.click(); URL.revokeObjectURL(a.href);
+    showToast('Daily report downloaded','⬇️');
+  };
+  const pr = el('<button class="btn btn-outline btn-sm">Print / Save as PDF</button>');
+  pr.onclick = ()=>window.print();
+  actions.appendChild(dl); actions.appendChild(pr);
+  card.appendChild(actions);
+  card.appendChild(el('<p class="rep-note">Figures update live as officers complete tokens and as farmers book slots, so the report always reflects the current state of every centre.</p>'));
+  wrap.appendChild(card);
+
+  const pay = el('<div class="card" style="margin-top:16px;"></div>');
+  pay.appendChild(el('<div class="section-label">Payment Settlement Summary</div>'));
+  const grid = el('<div class="kv-grid"></div>');
+  const settled = state.farmer.bookings.filter(b=>b.paymentStatus==='Completed');
+  const settledAmt = settled.reduce((s,b)=>s+(b.amount||0),0);
+  [['Transactions settled', settled.length],
+   ['Amount settled', fmtINR(settledAmt)],
+   ['Payments pending', totalPendingPay],
+   ['Avg processing time', Math.round(state.centres.reduce((s,c)=>s+c.avgProcessingMin,0)/state.centres.length)+' min']
+  ].forEach(([k,v])=>grid.appendChild(el('<div class="list-row"><span class="lr-label">'+k+'</span><span class="lr-value">'+v+'</span></div>')));
+  pay.appendChild(grid);
+  wrap.appendChild(pay);
+  return wrap;
+}
+
+/* ---- Admin: Settings ---- */
+function adminScreenSettings(){
+  const st = state.admin.settings;
+  const wrap = el('<div></div>');
+
+  const card = el('<div class="card" style="max-width:660px;"></div>');
+  card.appendChild(el('<div class="section-label">Booking & Notification Rules</div>'));
+
+  function toggleRow(label, sub, key){
+    const row = el('<div class="toggle-row"><div><div class="tr-label">'+label+'</div><div class="tr-sub">'+sub+'</div></div></div>');
+    const sw = el('<button class="switch'+(st[key]?' on':'')+'" aria-label="'+label+'"></button>');
+    sw.onclick = ()=>{ st[key] = !st[key]; render(); showToast(label+' '+(st[key]?'enabled':'disabled'), st[key]?'✅':'🚫'); };
+    row.appendChild(sw);
+    return row;
+  }
+  card.appendChild(toggleRow('SMS alerts to farmers','Send booking, queue and payment updates over SMS for low-connectivity users.','smsAlerts'));
+  card.appendChild(toggleRow('Auto-close full centres','Stop accepting bookings once a centre reaches its daily capacity.','autoCloseFullCentres'));
+  card.appendChild(toggleRow('Allow reschedule','Let farmers move their slot to another date without cancelling.','allowReschedule'));
+  wrap.appendChild(card);
+
+  const card2 = el('<div class="card" style="max-width:660px;margin-top:16px;"></div>');
+  card2.appendChild(el('<div class="section-label">Turn-Approaching Alert</div>'));
+  card2.appendChild(el('<p style="font-size:12.5px;color:var(--text-muted);line-height:1.5;margin-bottom:12px;">Notify a farmer once this many farmers remain ahead of them in the queue.</p>'));
+  const f = el('<div class="field" style="max-width:220px;"><label>Farmers remaining</label><input class="input" type="number" min="1" max="10" value="'+st.turnAlertLead+'"/></div>');
+  card2.appendChild(f);
+  const save = el('<button class="btn btn-primary btn-sm">Save alert rule</button>');
+  save.onclick = ()=>{
+    const v = parseInt(f.querySelector('input').value,10);
+    if(!v || v<1 || v>10){ showToast('Enter a number between 1 and 10','⚠️'); return; }
+    st.turnAlertLead = v; state.farmer._turnAlerted = false;
+    render(); showToast('Alert rule saved','✅');
+  };
+  card2.appendChild(save);
+  wrap.appendChild(card2);
+
+  const card3 = el('<div class="card" style="max-width:660px;margin-top:16px;"></div>');
+  card3.appendChild(el('<div class="section-label">Prototype Controls</div>'));
+  card3.appendChild(el('<p style="font-size:12.5px;color:var(--text-muted);line-height:1.5;margin-bottom:12px;">Reset every centre, queue, booking and payment back to the seeded demo state. Use this between jury runs.</p>'));
+  const reset = el('<button class="btn btn-danger-outline btn-sm">Reset demo data</button>');
+  reset.onclick = ()=>{
+    if(SIM_TIMER){ clearInterval(SIM_TIMER); SIM_TIMER=null; }
+    state = initState();
+    render();
+    showToast('Demo data reset to its starting state','🔄');
+  };
+  card3.appendChild(reset);
+  wrap.appendChild(card3);
+  return wrap;
+}
+
+/* =========================================================
+   GUIDED 5-MINUTE JURY DEMO  (plan section 12)
+   ========================================================= */
+const DEMO_STEPS = [
+  {title:'The problem', say:'Hundreds of farmers wait outside procurement centres for hours with no idea when their turn comes.',
+   body:'Start on the farmer app. Today the only way to know your position is to physically stand in line.',
+   go:()=>{ state.role='farmer'; }},
+  {title:'Farmer books a slot', say:'Ramesh Kumar, Farmer ID F10234, books 20 quintals of paddy at Centre A.',
+   body:'Log in with any mobile number and OTP 123456, then walk through crop, quantity, centre, date and slot.',
+   go:()=>{ state.role='farmer'; if(state.farmer.loggedIn){ state.farmer.screen='booking'; state.farmer.bookingStep=1; } }},
+  {title:'Digital token & QR', say:'The system issues Token A146 with a QR pass — no paper, no physical queue.',
+   body:'The confirmation screen carries the booking ID, token, slot and a scannable check-in pass.',
+   go:()=>{ state.role='farmer'; if(state.farmer.activeBooking) state.farmer.screen='confirmation'; }},
+  {title:'Live queue & predicted wait', say:'14 farmers ahead, about 28 minutes — computed from farmers ahead × processing time ÷ active counters.',
+   body:'Turn on Live simulation in the top bar to watch the queue move on its own.',
+   go:()=>{ state.role='farmer'; if(state.farmer.activeBooking) state.farmer.screen='queue'; }},
+  {title:'Turn-approaching alert', say:'The farmer gets a notification before their turn, so they travel only when needed.',
+   body:'Notifications cover booking, reminders, queue movement, completion and payment.',
+   go:()=>{ state.role='farmer'; state.farmer.screen='notifications'; }},
+  {title:'Officer checks the farmer in', say:'At the centre, the officer scans the QR and the status moves from Booked to Arrived.',
+   body:'Switch to the Officer console and use Live Queue → Call Next, then Check In.',
+   go:()=>{ state.role='officer'; if(state.officer.loggedIn) state.officer.screen='queue'; }},
+  {title:'Verification & procurement entry', say:'The officer verifies identity, then records 19.6 quintals accepted against 20 expected.',
+   body:'Start Processing on the token, then open Procurement Entry to record quantity and quality.',
+   go:()=>{ state.role='officer'; if(state.officer.loggedIn) state.officer.screen='procurement'; }},
+  {title:'Payment tracking', say:'Payment shows as Processing, then Completed — with a transaction ID the farmer can see.',
+   body:'Back on the farmer app, the payment screen carries amount, status and reference.',
+   go:()=>{ state.role='farmer'; state.farmer.screen='payments'; }},
+  {title:'Admin analytics', say:'Officials see volume, workload and load across every centre in the district.',
+   body:'Centre load, capacity used and pending payments are visible in one place.',
+   go:()=>{ state.role='admin'; state.admin.screen='analytics'; }},
+  {title:'The outcome', say:'FarmSync replaces physical waiting with a booked slot, a live position and visible payment status.',
+   body:'Farmers travel once, officers work a predictable queue, and administrators can rebalance load before a centre is overwhelmed.',
+   go:()=>{ state.role='admin'; state.admin.screen='dashboard'; }},
+];
+
+function renderDemoGuide(){
+  const d = state.demo;
+  if(!d.open){
+    return document.createComment('guided-demo-closed');
+  }
+  const step = DEMO_STEPS[d.step];
+  const panel = el('<div class="demo-panel"></div>');
+
+  const head = el('<div class="demo-head"><div><h4>Guided jury demo</h4><div class="dh-sub">SIH26032 · FARMSYNC</div></div></div>');
+  const close = el('<button class="demo-close" aria-label="Close guided demo">×</button>');
+  close.onclick = ()=>{ d.open=false; render(); };
+  head.appendChild(close);
+  panel.appendChild(head);
+
+  const body = el('<div class="demo-body"></div>');
+  body.appendChild(el('<div class="demo-count">STEP '+(d.step+1)+' OF '+DEMO_STEPS.length+'</div>'));
+  body.appendChild(el('<h5>'+step.title+'</h5>'));
+  body.appendChild(el('<p>'+step.body+'</p>'));
+  body.appendChild(el('<div class="demo-say">🗣 '+step.say+'</div>'));
+
+  const prog = el('<div class="demo-progress"></div>');
+  DEMO_STEPS.forEach((_,i)=>prog.appendChild(el('<span'+(i<=d.step?' class="done"':'')+'></span>')));
+  body.appendChild(prog);
+
+  const nav = el('<div class="demo-nav"></div>');
+  const prev = el('<button class="btn btn-outline btn-sm">Back</button>');
+  prev.disabled = d.step===0;
+  if(d.step===0) prev.style.opacity='0.45';
+  prev.onclick = ()=>{ d.step--; DEMO_STEPS[d.step].go(); render(); };
+  nav.appendChild(prev);
+
+  if(d.step < DEMO_STEPS.length-1){
+    const next = el('<button class="btn btn-primary btn-sm">Next step</button>');
+    next.onclick = ()=>{ d.step++; DEMO_STEPS[d.step].go(); render(); };
+    nav.appendChild(next);
+  } else {
+    const done = el('<button class="btn btn-accent btn-sm">Finish</button>');
+    done.onclick = ()=>{ d.open=false; render(); showToast('Demo complete','🎉'); };
+    nav.appendChild(done);
+  }
+  body.appendChild(nav);
+  panel.appendChild(body);
+  return panel;
+}
+</script>
+</body>
+</html>
